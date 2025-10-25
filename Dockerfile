@@ -33,7 +33,7 @@ COPY composer.json composer.lock ./
 COPY package.json package-lock.json ./
 
 # Instalar dependencias PHP
-RUN composer install --no-dev --no-scripts --no-autoload --prefer-dist
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 # Instalar dependencias Node
 RUN npm ci --legacy-peer-deps
