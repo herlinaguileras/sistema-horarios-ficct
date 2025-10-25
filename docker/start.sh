@@ -9,15 +9,27 @@ echo "APP_KEY: ${APP_KEY:0:20}..."
 echo "APP_URL: ${APP_URL}"
 echo "DB_HOST: ${DB_HOST}"
 echo "DB_DATABASE: ${DB_DATABASE}"
+echo "PORT: ${PORT:-8080}"
 echo "================================"
+
+# Configurar Nginx con el puerto correcto
+echo "🔧 Configuring Nginx port..."
+if [ -f /docker/nginx.conf.template ]; then
+    envsubst '${PORT}' < /docker/nginx.conf.template > /etc/nginx/sites-available/default
+else
+    sed -i "s/listen 8080;/listen ${PORT:-8080};/g" /etc/nginx/sites-available/default
+fi
 
 # Esperar a que PostgreSQL esté disponible
 echo "⏳ Waiting for PostgreSQL..."
-until pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USERNAME}" 2>/dev/null; do
-  echo "PostgreSQL is unavailable - sleeping"
-  sleep 2
+for i in {1..30}; do
+    if pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USERNAME}" 2>/dev/null; then
+        echo "✅ PostgreSQL is ready!"
+        break
+    fi
+    echo "PostgreSQL is unavailable - attempt $i/30"
+    sleep 2
 done
-echo "✅ PostgreSQL is ready!"
 
 # Verificar APP_KEY
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
