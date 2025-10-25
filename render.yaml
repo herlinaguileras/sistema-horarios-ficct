@@ -6,6 +6,7 @@ services:
     region: oregon
     branch: main
     dockerfilePath: ./Dockerfile.render
+    healthCheckPath: /
     envVars:
       - key: APP_NAME
         value: FICCT Horarios
