@@ -1,18 +1,21 @@
 # Railway Nixpacks Configuration for Laravel
+[variables]
+NIXPACKS_NO_MUSL = "1"
+
 [phases.setup]
-nixPkgs = ["...", "php84", "php84Extensions.pgsql", "php84Extensions.gd", "php84Extensions.zip", "php84Extensions.mbstring", "nodejs_20"]
+nixPkgs = ["php84", "php84Extensions.pgsql", "php84Extensions.gd", "php84Extensions.zip", "php84Extensions.mbstring", "nodejs_20"]
 
 [phases.install]
 cmds = [
-    "composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-reqs",
-    "npm ci",
-    "npm run build"
+  "composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs",
+  "npm ci",
+  "npm run build"
 ]
 
 [phases.build]
 cmds = [
-    "php artisan storage:link",
-    "chmod -R 775 storage bootstrap/cache"
+  "php artisan storage:link || true",
+  "chmod -R 775 storage bootstrap/cache || true"
 ]
 
 [start]
