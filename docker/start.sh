@@ -50,9 +50,9 @@ echo "🗄️  Running migrations..."
 php artisan migrate --force --no-interaction
 echo "✅ Migrations completed"
 
-# Ejecutar seeders (solo datos iniciales)
+# Ejecutar seeders (datos de producción completos)
 echo "🌱 Running seeders..."
-php artisan db:seed --class=InitialDataSeeder --force --no-interaction || echo "⚠️  Seeders already run or failed"
+php artisan db:seed --class=ProductionDataSeeder --force --no-interaction || echo "⚠️  Seeders already run or failed"
 echo "✅ Seeders completed"
 
 # Limpiar caché antes de cachear

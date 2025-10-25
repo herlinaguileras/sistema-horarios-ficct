@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Call the InitialDataSeeder to create all initial data
+        // Call the ProductionDataSeeder to create all production data
         $this->call([
-            InitialDataSeeder::class,
+            ProductionDataSeeder::class,
         ]);
     }
 }
