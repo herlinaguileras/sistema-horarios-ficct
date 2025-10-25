@@ -59,16 +59,20 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () { // <-
 
 // Profile Routes (accessible to any logged-in user)
 Route::middleware('auth')->group(function () {
-// Nueva ruta para que el docente marque asistencia
-Route::post('/asistencias/marcar/{horario}', [AsistenciaController::class, 'marcarAsistencia'])
-    ->middleware(['auth', 'verified']) // Ensure user is logged in
-    ->name('asistencias.marcar');
-    Route::get('/asistencias/marcar-qr/{horario}', [AsistenciaController::class, 'marcarAsistenciaQr'])
+    // Nueva ruta para que el docente marque asistencia (botón)
+    Route::post('/asistencias/marcar/{horario}', [AsistenciaController::class, 'marcarAsistencia'])
+        ->middleware(['auth', 'verified'])
+        ->name('asistencias.marcar');
+
+    // CORREGIDO: Cambiar GET a POST por seguridad (CSRF protection)
+    Route::post('/asistencias/marcar-qr/{horario}', [AsistenciaController::class, 'marcarAsistenciaQr'])
+        ->middleware(['auth', 'verified'])
         ->name('asistencias.marcar.qr');
+
     // Route to display the QR code for a specific Horario
-Route::get('/horarios/{horario}/qr', [HorarioController::class, 'showQrCode'])
-    ->middleware(['auth', 'verified']) // Protect the route
-    ->name('horarios.qr'); // Name the route
+    Route::get('/horarios/{horario}/qr', [HorarioController::class, 'showQrCode'])
+        ->middleware(['auth', 'verified'])
+        ->name('horarios.qr');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
