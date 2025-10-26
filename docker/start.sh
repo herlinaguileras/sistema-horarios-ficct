@@ -50,6 +50,21 @@ echo "🗄️  Running migrations..."
 php artisan migrate --force --no-interaction
 echo "✅ Migrations completed"
 
+# Fix column names in asistencias table if needed (one-time fix)
+echo "🔧 Checking asistencias table columns..."
+psql "${DATABASE_URL}" -c "DO \$\$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='asistencias' AND column_name='hsora_registro') THEN
+        ALTER TABLE asistencias RENAME COLUMN hsora_registro TO hora_registro;
+        RAISE NOTICE 'Column hsora_registro renamed to hora_registro';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='asistencias' AND column_name='etado') THEN
+        ALTER TABLE asistencias RENAME COLUMN etado TO estado;
+        RAISE NOTICE 'Column etado renamed to estado';
+    END IF;
+END \$\$;" || echo "⚠️  Could not check/fix column names (table may not exist yet)"
+echo "✅ Column names verified"
+
 # Ejecutar seeders (datos de producción completos)
 echo "🌱 Running seeders..."
 php artisan db:seed --class=ProductionDataSeeder --force --no-interaction || echo "⚠️  Seeders already run or failed"
