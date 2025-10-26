@@ -218,34 +218,31 @@ class ProductionDataSeeder extends Seeder
         // === 7. GRUPOS ===
         $this->command->info('👥 Creando grupos...');
         $gruposData = [
-            ['materia_sigla' => 'INF322', 'docente_email' => 'juanperez@gmail.com', 'numero_grupo' => 'A'],
-            ['materia_sigla' => 'INF110', 'docente_email' => 'juanperez@gmail.com', 'numero_grupo' => 'A'],
-            ['materia_sigla' => 'INF110', 'docente_email' => 'pacoweb@gmail.com', 'numero_grupo' => 'B'],
-            ['materia_sigla' => 'INF322', 'docente_email' => 'jose@gmail.com', 'numero_grupo' => 'B'],
-            ['materia_sigla' => 'INF110', 'docente_email' => 'jose@gmail.com', 'numero_grupo' => 'C'],
-            ['materia_sigla' => 'INF322', 'docente_email' => 'jose@gmail.com', 'numero_grupo' => 'C'],
+            ['materia_sigla' => 'INF322', 'docente_email' => 'juanperez@gmail.com', 'nombre_grupo' => 'A'],
+            ['materia_sigla' => 'INF110', 'docente_email' => 'juanperez@gmail.com', 'nombre_grupo' => 'A'],
+            ['materia_sigla' => 'INF110', 'docente_email' => 'pacoweb@gmail.com', 'nombre_grupo' => 'B'],
+            ['materia_sigla' => 'INF322', 'docente_email' => 'jose@gmail.com', 'nombre_grupo' => 'B'],
+            ['materia_sigla' => 'INF110', 'docente_email' => 'jose@gmail.com', 'nombre_grupo' => 'C'],
+            ['materia_sigla' => 'INF322', 'docente_email' => 'jose@gmail.com', 'nombre_grupo' => 'C'],
         ];
 
         $gruposCreados = [];
         foreach ($gruposData as $grupoData) {
             $materia = $materiasCreadas[$grupoData['materia_sigla']];
             $docente = User::where('email', $grupoData['docente_email'])->first()->docente;
-
+            
             $grupo = Grupo::firstOrCreate(
                 [
                     'semestre_id' => $semestre->id,
                     'materia_id' => $materia->id,
-                    'numero_grupo' => $grupoData['numero_grupo']
+                    'nombre' => $grupoData['nombre_grupo']
                 ],
                 [
                     'docente_id' => $docente->id,
-                    'cupo_maximo' => 40,
                 ]
             );
             $gruposCreados[] = $grupo;
-        }
-
-        // === 8. HORARIOS ===
+        }        // === 8. HORARIOS ===
         $this->command->info('🕐 Creando horarios...');
         $horariosData = [
             ['grupo_index' => 0, 'dia' => 1, 'inicio' => '08:30:00', 'fin' => '10:00:00', 'aula' => '236-31'],
