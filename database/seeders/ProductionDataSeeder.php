@@ -230,7 +230,7 @@ class ProductionDataSeeder extends Seeder
         foreach ($gruposData as $grupoData) {
             $materia = $materiasCreadas[$grupoData['materia_sigla']];
             $docente = User::where('email', $grupoData['docente_email'])->first()->docente;
-            
+
             $grupo = Grupo::firstOrCreate(
                 [
                     'semestre_id' => $semestre->id,
