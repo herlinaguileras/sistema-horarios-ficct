@@ -19,8 +19,8 @@ return new class extends Migration
 
         // --- Datos del Registro ---
         $table->date('fecha'); // El día específico de la clase
-        $table->time('hsora_registro'); // Hora exacta en que marcó
-        $table->string('etado')->default('Presente'); // Ej: 'Presente', 'Ausente', 'Licencia'
+        $table->time('hora_registro'); // Hora exacta en que marcó
+        $table->string('estado')->default('Presente'); // Ej: 'Presente', 'Ausente', 'Licencia'
         $table->string('metodo_registro')->nullable(); // Ej: 'QR', 'Manual', 'Formulario'
 
         $table->timestamps();
