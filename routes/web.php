@@ -17,7 +17,7 @@ Route::get('/', function () {
 
 // Dashboard Routes (accessible to any logged-in user for now)
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 Route::get('/dashboard/export/horario-semanal', [DashboardController::class, 'exportHorarioSemanal'])
     ->middleware(['auth', 'verified'])
