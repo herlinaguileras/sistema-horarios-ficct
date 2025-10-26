@@ -163,11 +163,7 @@ class ProductionDataSeeder extends Seeder
             // Crear títulos
             foreach ($data['titulos'] as $tituloNombre) {
                 Titulo::firstOrCreate(
-                    ['docente_id' => $docente->id, 'nombre' => $tituloNombre],
-                    [
-                        'institucion' => 'Universidad',
-                        'anio_obtencion' => 2020,
-                    ]
+                    ['docente_id' => $docente->id, 'nombre' => $tituloNombre]
                 );
             }
         }
