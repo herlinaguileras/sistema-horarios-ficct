@@ -16,6 +16,18 @@ class EstadisticaController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+        
+        // Si el usuario es docente, redirigir a sus propias estadísticas
+        if ($user->hasRole('docente') && $user->docente) {
+            return redirect()->route('estadisticas.show', $user->docente->id);
+        }
+        
+        // Solo admins pueden ver la lista de todos los docentes
+        if (!$user->hasRole('admin')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        
         // Obtener todos los docentes con sus relaciones
         $docentes = Docente::with(['user', 'grupos.materia', 'grupos.horarios'])
             ->where('estado', 'Activo')
