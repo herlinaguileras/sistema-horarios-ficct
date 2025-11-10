@@ -121,11 +121,9 @@
                                                     <div class="px-2 py-1 mb-1 text-xs font-semibold border-l-4 rounded {{ $colorClase }}">
                                                         <div class="font-bold">{{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->nombre }}</div>
                                                         <div class="text-xs opacity-90">{{ $horario->aula->nombre }}</div>
-                                                        @if ($esPrimerBloque)
-                                                            <div class="text-xs font-normal opacity-75 mt-1">
-                                                                {{ $horario->grupo->materia->nombre }}
-                                                            </div>
-                                                        @endif
+                                                        <div class="text-xs font-normal opacity-75 mt-1">
+                                                            {{ $horario->grupo->materia->nombre }}
+                                                        </div>
                                                     </div>
                                                 @endforeach
                                             @else
