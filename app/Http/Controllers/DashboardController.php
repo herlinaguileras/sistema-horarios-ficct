@@ -194,7 +194,7 @@ public function index(Request $request)
         $horariosPorDia = collect();
         $totalAsistencias = 0;
         $activeTab = $request->input('tab', 'horario');
-        
+
         $diasSemana = [
             1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'
         ];
@@ -206,9 +206,9 @@ public function index(Request $request)
                 })
                 ->with(['grupo.materia', 'aula'])
                 ->orderBy('dia_semana')->orderBy('hora_inicio')->get();
-            
+
             $horariosPorDia = $horariosDocente->groupBy('dia_semana');
-            
+
             // Calcular total de asistencias registradas
             $totalAsistencias = Asistencia::whereIn('horario_id', $horariosDocente->pluck('id'))->count();
         }
@@ -231,14 +231,14 @@ public function index(Request $request)
     {
         // Obtener el primer rol del usuario (asumiendo que tiene uno principal)
         $role = $user->roles()->first();
-        
+
         if (!$role) {
             return view('dashboard-default');
         }
-        
+
         // Obtener todos los permisos del rol
         $permissions = $role->permissions;
-        
+
         return view('dashboards.custom-role', [
             'role' => $role,
             'permissions' => $permissions,

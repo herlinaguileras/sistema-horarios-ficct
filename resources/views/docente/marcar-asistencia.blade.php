@@ -90,7 +90,7 @@
                                         </form>
 
                                         {{-- Botón Manual - Abre Modal --}}
-                                        <button type="button" 
+                                        <button type="button"
                                                 onclick="openModal('modal-{{ $horario->id }}')"
                                                 class="flex-1 inline-flex justify-center items-center px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
                                             <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -130,17 +130,17 @@
                                                                     <strong>Materia:</strong> {{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->materia->nombre }}
                                                                 </p>
                                                                 <p class="text-sm text-gray-700 mb-4">
-                                                                    <strong>Grupo:</strong> {{ $horario->grupo->nombre }} | 
+                                                                    <strong>Grupo:</strong> {{ $horario->grupo->nombre }} |
                                                                     <strong>Aula:</strong> {{ $horario->aula->nombre }}
                                                                 </p>
-                                                                
+
                                                                 <div>
                                                                     <label for="password-{{ $horario->id }}" class="block mb-2 text-sm font-medium text-gray-700">
                                                                         Ingrese su contraseña para confirmar
                                                                     </label>
-                                                                    <input type="password" 
-                                                                           id="password-{{ $horario->id }}" 
-                                                                           name="password" 
+                                                                    <input type="password"
+                                                                           id="password-{{ $horario->id }}"
+                                                                           name="password"
                                                                            required
                                                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                                                            placeholder="Contraseña">
@@ -153,7 +153,7 @@
                                                     <button type="submit" class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
                                                         Confirmar Asistencia
                                                     </button>
-                                                    <button type="button" 
+                                                    <button type="button"
                                                             onclick="closeModal('modal-{{ $horario->id }}')"
                                                             class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                                         Cancelar

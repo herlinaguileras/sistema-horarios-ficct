@@ -27,17 +27,17 @@
                             $horaFin = 24 * 60; // 24:00 en minutos
                             $intervalo = 45; // minutos
                             $bloques = [];
-                            
+
                             for ($minutos = $horaInicio; $minutos < $horaFin; $minutos += $intervalo) {
                                 $horas = floor($minutos / 60);
                                 $mins = $minutos % 60;
                                 $inicioBloque = sprintf('%02d:%02d', $horas, $mins);
-                                
+
                                 $minutosFinBloque = $minutos + $intervalo;
                                 $horasFinBloque = floor($minutosFinBloque / 60);
                                 $minsFinBloque = $minutosFinBloque % 60;
                                 $finBloque = sprintf('%02d:%02d', $horasFinBloque, $minsFinBloque);
-                                
+
                                 $bloques[] = [
                                     'inicio' => $inicioBloque,
                                     'fin' => $finBloque,
@@ -45,21 +45,21 @@
                                     'fin_min' => $minutosFinBloque
                                 ];
                             }
-                            
+
                             // Organizar horarios por día y calcular su posición en bloques
                             $horariosPorDiaYBloque = [];
                             $bloquesOcupados = []; // Para rastrear qué bloques tienen clases
-                            
+
                             foreach ($horariosDocente as $horario) {
                                 $diaNum = $horario->dia_semana;
-                                
+
                                 // Convertir hora_inicio y hora_fin a minutos desde medianoche
                                 $horaInicioPartes = explode(':', $horario->hora_inicio);
                                 $horarioInicioMin = (int)$horaInicioPartes[0] * 60 + (int)$horaInicioPartes[1];
-                                
+
                                 $horaFinPartes = explode(':', $horario->hora_fin);
                                 $horarioFinMin = (int)$horaFinPartes[0] * 60 + (int)$horaFinPartes[1];
-                                
+
                                 // Encontrar bloques que intersectan con este horario
                                 foreach ($bloques as $indiceBloque => $bloque) {
                                     // Si el bloque se solapa con el horario
@@ -72,7 +72,7 @@
                                     }
                                 }
                             }
-                            
+
                             // Definir colores para diferentes materias
                             $colores = [
                                 'bg-green-100 border-green-400 text-green-900',
@@ -84,7 +84,7 @@
                                 'bg-blue-100 border-blue-400 text-blue-900',
                                 'bg-red-100 border-red-400 text-red-900',
                             ];
-                            
+
                             $materiaColores = [];
                             $colorIndex = 0;
                         @endphp
@@ -111,13 +111,13 @@
                                                             $colorIndex++;
                                                         }
                                                         $colorClase = $materiaColores[$materiaId];
-                                                        
+
                                                         // Calcular si este es el primer bloque del horario
                                                         $horaInicioPartes = explode(':', $horario->hora_inicio);
                                                         $horarioInicioMin = (int)$horaInicioPartes[0] * 60 + (int)$horaInicioPartes[1];
                                                         $esPrimerBloque = $bloque['inicio_min'] <= $horarioInicioMin && $bloque['fin_min'] > $horarioInicioMin;
                                                     @endphp
-                                                    
+
                                                     <div class="px-2 py-1 mb-1 text-xs font-semibold border-l-4 rounded {{ $colorClase }}">
                                                         <div class="font-bold">{{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->nombre }}</div>
                                                         <div class="text-xs opacity-90">{{ $horario->aula->nombre }}</div>
@@ -152,25 +152,25 @@
                                     'horarios' => []
                                 ];
                             }
-                            
+
                             // Agregar grupo si no existe
                             $grupoNombre = $horario->grupo->nombre;
                             if (!in_array($grupoNombre, $materiasConInfo[$materiaId]['grupos'])) {
                                 $materiasConInfo[$materiaId]['grupos'][] = $grupoNombre;
                             }
-                            
+
                             // Agregar horario
                             $diaNum = $horario->dia_semana;
-                            $horarioTexto = $diasSemana[$diaNum] . ' ' . 
-                                          date('H:i', strtotime($horario->hora_inicio)) . ' - ' . 
+                            $horarioTexto = $diasSemana[$diaNum] . ' ' .
+                                          date('H:i', strtotime($horario->hora_inicio)) . ' - ' .
                                           date('H:i', strtotime($horario->hora_fin));
-                            
+
                             if (!in_array($horarioTexto, $materiasConInfo[$materiaId]['horarios'])) {
                                 $materiasConInfo[$materiaId]['horarios'][] = $horarioTexto;
                             }
                         }
                     @endphp
-                    
+
                     @foreach ($materiasConInfo as $materiaId => $info)
                         @php
                             $colorClase = $materiaColores[$materiaId] ?? 'bg-gray-100 border-gray-400 text-gray-900';

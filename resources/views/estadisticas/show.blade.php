@@ -10,7 +10,7 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            
+
             {{-- Resumen General del Docente --}}
             <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-4">
                 <div class="overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow">
@@ -95,7 +95,7 @@
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h3 class="mb-4 text-lg font-semibold text-gray-900">Historial Completo de Asistencias por Materia y Grupo</h3>
-                    
+
                     @forelse($detallesGrupos as $detalle)
                         <div class="mb-6 overflow-hidden border border-gray-200 rounded-lg">
                             {{-- Encabezado de Materia/Grupo --}}
@@ -207,22 +207,6 @@
                                                 @endforeach
                                             </tbody>
                                         </table>
-                                    </div>
-                                    
-                                    {{-- Resumen estadístico del historial --}}
-                                    <div class="grid grid-cols-1 gap-4 p-4 mt-4 border-t border-gray-200 md:grid-cols-3 bg-gray-50">
-                                        <div class="text-center">
-                                            <p class="text-xs text-gray-500">Clases Registradas</p>
-                                            <p class="text-2xl font-bold text-gray-900">{{ count($detalle['historial']) }}</p>
-                                        </div>
-                                        <div class="text-center">
-                                            <p class="text-xs text-gray-500">Total Estudiantes</p>
-                                            <p class="text-2xl font-bold text-gray-900">{{ $detalle['total_asistencias'] }}</p>
-                                        </div>
-                                        <div class="text-center">
-                                            <p class="text-xs text-gray-500">Promedio por Clase</p>
-                                            <p class="text-2xl font-bold text-gray-900">{{ count($detalle['historial']) > 0 ? round($detalle['total_asistencias'] / count($detalle['historial']), 1) : 0 }}</p>
-                                        </div>
                                     </div>
                                 </div>
                             @else
