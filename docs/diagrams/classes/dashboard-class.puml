@@ -1,0 +1,59 @@
+@startuml
+class User {
+	+id: int
+	+name: string
+	+email: string
+}
+
+class Semestre {
+	+id: int
+	+nombre: string
+	+estado: string
+}
+
+class Horario {
+	+id: int
+	+grupo_id: int
+	+aula_id: int
+	+dia_semana: int
+	+hora_inicio: time
+	+hora_fin: time
+}
+
+class Grupo {
+	+id: int
+	+materia_id: int
+	+docente_id: int
+	+nombre: string
+}
+
+class Materia {
+	+id: int
+	+nombre: string
+	+sigla: string
+}
+
+class Asistencia {
+	+id: int
+	+horario_id: int
+	+docente_id: int
+	+fecha: date
+	+hora_registro: time
+}
+
+class Aula {
+	+id: int
+	+nombre: string
+	+piso: int
+}
+
+User "1" -- "0..1" Semestre : uses
+Semestre "1" -- "0..*" Grupo
+Grupo "1" -- "0..*" Horario
+Grupo "1" -- "1" Materia
+Horario "*" -- "1" Aula
+Horario "*" -- "*" Asistencia
+
+note "Clases implicadas en la construcción del dashboard (atributos extraídos de modelos)" as N
+N .. (User,Semestre,Horario,Asistencia)
+@enduml

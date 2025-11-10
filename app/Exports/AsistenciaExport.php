@@ -11,10 +11,12 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 class AsistenciaExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
     protected $semestreId;
+    protected $filtros;
 
-    public function __construct(int $semestreId)
+    public function __construct(int $semestreId, array $filtros = [])
     {
         $this->semestreId = $semestreId;
+        $this->filtros = $filtros;
     }
 
     /**
@@ -23,7 +25,7 @@ class AsistenciaExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
     public function query()
     {
         // Same query logic as in DashboardController
-        return Asistencia::query()
+        $query = Asistencia::query()
             ->whereHas('horario.grupo', function ($query) {
                 $query->where('semestre_id', $this->semestreId);
             })
@@ -31,7 +33,36 @@ class AsistenciaExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
                 'docente.user',
                 'horario.grupo.materia',
                 'horario.aula' // Added Aula for context if needed, though not mapped below
-            ])
+            ]);
+
+        // Apply filters
+        if (!empty($this->filtros['filtro_asist_docente_id'])) {
+            $query->where('docente_id', $this->filtros['filtro_asist_docente_id']);
+        }
+        if (!empty($this->filtros['filtro_asist_materia_id'])) {
+            $query->whereHas('horario.grupo', function ($q) {
+                $q->where('materia_id', $this->filtros['filtro_asist_materia_id']);
+            });
+        }
+        if (!empty($this->filtros['filtro_asist_grupo_id'])) {
+            $query->whereHas('horario', function ($q) {
+                $q->where('grupo_id', $this->filtros['filtro_asist_grupo_id']);
+            });
+        }
+        if (!empty($this->filtros['filtro_asist_estado'])) {
+            $query->where('estado', $this->filtros['filtro_asist_estado']);
+        }
+        if (!empty($this->filtros['filtro_asist_metodo'])) {
+            $query->where('metodo_registro', $this->filtros['filtro_asist_metodo']);
+        }
+        if (!empty($this->filtros['filtro_asist_fecha_inicio'])) {
+            $query->where('fecha', '>=', $this->filtros['filtro_asist_fecha_inicio']);
+        }
+        if (!empty($this->filtros['filtro_asist_fecha_fin'])) {
+            $query->where('fecha', '<=', $this->filtros['filtro_asist_fecha_fin']);
+        }
+
+        return $query
             ->orderBy('docente_id')
             ->orderBy('horario_id') // Use horario_id for grouping consistency
             ->orderBy('fecha', 'asc') // Order chronologically within group

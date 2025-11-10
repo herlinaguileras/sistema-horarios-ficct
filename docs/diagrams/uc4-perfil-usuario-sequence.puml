@@ -1,0 +1,66 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Usuario
+participant "update-profile-information-form.blade.php" as ProfileView <<Boundary>>
+participant "ProfileController" as Controller <<Control>>
+participant "User" as UserModel <<Entity>>
+
+Usuario -> ProfileView: accederPerfil()
+activate ProfileView
+
+ProfileView -> Controller: GET route('profile.edit')
+activate Controller
+
+Controller -> Controller: edit(Request)
+
+Controller -> UserModel: obtenerUsuarioAutenticado()
+activate UserModel
+
+UserModel --> Controller: datosUsuario
+deactivate UserModel
+
+Controller --> ProfileView: view('profile.edit', user)
+deactivate Controller
+
+ProfileView -> ProfileView: mostrarFormulario(name, email)
+
+ProfileView --> Usuario: mostrarDatosActuales()
+
+Usuario -> ProfileView: modificarDatos(name, email)
+
+Usuario -> ProfileView: submitForm()
+
+ProfileView -> Controller: PATCH route('profile.update')
+activate Controller
+
+Controller -> Controller: update(ProfileUpdateRequest)
+
+Controller -> Controller: validarDatos(name, email único)
+
+Controller -> UserModel: fill(validatedData)
+activate UserModel
+
+UserModel -> UserModel: isDirty('email')
+
+alt email cambió
+    UserModel -> UserModel: email_verified_at = null
+end
+
+UserModel -> UserModel: save()
+
+UserModel --> Controller: perfilActualizado
+deactivate UserModel
+
+Controller -> Controller: redirect()->route('profile.edit')
+
+Controller --> ProfileView: RedirectResponse(status: 'profile-updated')
+deactivate Controller
+
+ProfileView --> Usuario: mostrarMensajeExito()
+deactivate ProfileView
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml
+package "UI" {
+  [Controllers]
+  [Views]
+}
+package "Domain" {
+  [Models]
+  [Services]
+}
+package "Infra" {
+  [Repositories]
+  [Database]
+}
+
+UI --> Domain
+Domain --> Infra
+@enduml

@@ -13,11 +13,13 @@ class HorarioSemanalExport implements FromQuery, WithHeadings, WithMapping, Shou
 {
     protected $semestreId;
     protected $diasSemana;
+    protected $filtros;
 
-    // Receive the active semester ID when the export is created
-    public function __construct(int $semestreId)
+    // Receive the active semester ID and filters when the export is created
+    public function __construct(int $semestreId, array $filtros = [])
     {
         $this->semestreId = $semestreId;
+        $this->filtros = $filtros;
         $this->diasSemana = [ // Array to convert number to name
             1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'
         ];
@@ -29,13 +31,34 @@ class HorarioSemanalExport implements FromQuery, WithHeadings, WithMapping, Shou
     public function query()
     {
         // Same query as in DashboardController, ordered for the report
-        return Horario::query()
+        $query = Horario::query()
             ->whereHas('grupo', function ($query) {
                 $query->where('semestre_id', $this->semestreId);
             })
-            ->with(['grupo.materia', 'grupo.docente.user', 'aula'])
-            ->orderBy('dia_semana')
-            ->orderBy('hora_inicio');
+            ->with(['grupo.materia', 'grupo.docente.user', 'aula']);
+
+        // Apply filters
+        if (!empty($this->filtros['filtro_docente_id'])) {
+            $query->whereHas('grupo', function ($q) {
+                $q->where('docente_id', $this->filtros['filtro_docente_id']);
+            });
+        }
+        if (!empty($this->filtros['filtro_materia_id'])) {
+            $query->whereHas('grupo', function ($q) {
+                $q->where('materia_id', $this->filtros['filtro_materia_id']);
+            });
+        }
+        if (!empty($this->filtros['filtro_grupo_id'])) {
+            $query->where('grupo_id', $this->filtros['filtro_grupo_id']);
+        }
+        if (!empty($this->filtros['filtro_aula_id'])) {
+            $query->where('aula_id', $this->filtros['filtro_aula_id']);
+        }
+        if (!empty($this->filtros['filtro_dia_semana'])) {
+            $query->where('dia_semana', $this->filtros['filtro_dia_semana']);
+        }
+
+        return $query->orderBy('dia_semana')->orderBy('hora_inicio');
     }
 
     /**

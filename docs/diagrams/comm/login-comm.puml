@@ -1,0 +1,15 @@
+@startuml
+title Diagrama de Comunicación - Login
+actor User
+participant "AuthenticatedSessionController" as Controller
+participant "AuthService" as Service
+participant "users (DB)" as DB
+
+User -> Controller: submit(credentials)
+Controller -> Service: validateCredentials()
+Service -> DB: select user by email
+DB --> Service: userRow
+Service -> Service: verify password
+Service --> Controller: ok / fail
+Controller --> User: redirect / error
+@enduml

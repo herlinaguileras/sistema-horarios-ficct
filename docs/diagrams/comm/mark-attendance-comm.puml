@@ -1,0 +1,20 @@
+@startuml
+title Diagrama de Comunicación - Marcar Asistencia (Botón/QR)
+actor Docente
+participant "AsistenciaController" as AC
+participant "Auth" as Auth
+participant "Horario Model" as HDB
+participant "Asistencia Model" as ADB
+
+Docente -> AC: POST /asistencias/marcar/{horario} or /asistencias/marcar-qr/{horario}
+AC -> Auth: get current user
+AC -> HDB: validate horario, docente match, time window
+HDB --> AC: ok/fail
+alt ok
+  AC -> ADB: create asistencia (metodo_registro)
+  ADB --> AC: asistencia
+  AC --> Docente: redirect dashboard
+else fail
+  AC --> Docente: redirect dashboard (error)
+end
+@enduml

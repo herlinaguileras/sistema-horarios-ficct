@@ -52,8 +52,13 @@
 
                             <div>
                                 <x-input-label for="codigo_docente" :value="__('Código Docente')" />
-                                <x-text-input id="codigo_docente" class="block w-full mt-1" type="text" name="codigo_docente" :value="old('codigo_docente')" required />
-                                <x-input-error :messages="$errors->get('codigo_docente')" class="mt-2" />
+                                <x-text-input id="codigo_docente" 
+                                              class="block w-full mt-1 bg-gray-100 cursor-not-allowed" 
+                                              type="text" 
+                                              name="codigo_docente_display" 
+                                              :value="$proximoCodigo" 
+                                              readonly />
+                                <p class="mt-1 text-xs text-green-600">✓ Se asignará automáticamente al guardar</p>
                             </div>
 
                             <div>

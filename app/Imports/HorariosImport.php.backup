@@ -1,0 +1,782 @@
+<?php
+
+namespace App\Imports;
+
+use App\Models\Docente;
+use App\Models\Materia;
+use App\Models\Grupo;
+use App\Models\Horario;
+use App\Models\Semestre;
+use App\Models\User;
+use App\Models\Role;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Concerns\ToCollection;
+
+class HorariosImport implements ToCollection
+{
+    protected $semestre;
+    protected $errores = [];
+    protected $importados = 0;
+    protected $actualizados = 0;
+    protected $docentesCreados = 0;
+    protected $materiasCreadas = 0;
+    protected $gruposCreados = 0;
+    protected $horariosCreados = 0;
+
+    public function __construct(Semestre $semestre)
+    {
+        $this->semestre = $semestre;
+    }
+
+    /**
+     * Procesa el archivo Excel/CSV
+     */
+    public function collection(Collection $rows)
+    {
+        // Saltar la primera fila (encabezados: SIGLA, SEM, GR, MATERIA, DOCENTE, DIA, HORA...)
+        $filas = $rows->slice(1);
+
+        foreach ($filas as $index => $row) {
+            try {
+                // Validar que la fila tenga al menos 5 columnas básicas
+                if ($row->count() < 5) {
+                    continue; // Fila vacía
+                }
+
+                $sigla = strtoupper(trim($row[0] ?? ''));
+                $sem = trim($row[1] ?? '');
+                $gr = strtoupper(trim($row[2] ?? ''));
+                $nombreMateria = mb_strtoupper(trim($row[3] ?? ''));
+                $nombreDocente = mb_strtoupper(trim($row[4] ?? ''));
+
+                // Validar datos mínimos
+                if (empty($sigla) || empty($nombreMateria) || empty($nombreDocente)) {
+                    $this->errores[] = "Fila " . ($index + 2) . ": Faltan datos básicos (SIGLA, MATERIA o DOCENTE)";
+                    continue;
+                }
+
+                DB::beginTransaction();
+
+                // 1. CREAR O BUSCAR MATERIA
+                $materia = $this->crearOActualizarMateria($sigla, $nombreMateria);
+
+                // 2. CREAR O BUSCAR DOCENTE
+                $docente = $this->crearOActualizarDocente($nombreDocente);
+
+                // 3. CREAR O BUSCAR GRUPO
+                $nombreGrupo = $this->generarNombreGrupo($sem, $gr);
+                $grupo = $this->crearOActualizarGrupo($materia, $docente, $nombreGrupo);
+
+                // 4. ELIMINAR HORARIOS ANTIGUOS DEL GRUPO (para sobrescribir)
+                Horario::where('grupo_id', $grupo->id)->delete();
+
+                // 5. PROCESAR HORARIOS (pares DIA-HORA a partir de columna 5)
+                $this->procesarHorarios($row, $grupo, $index);
+
+                $this->importados++;
+                DB::commit();
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $this->errores[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
+            }
+        }
+    }
+
+    /**
+     * Crea o actualiza una materia
+     */
+    protected function crearOActualizarMateria($codigo, $nombre)
+    {
+        $materia = Materia::where('codigo', $codigo)->first();
+
+        if ($materia) {
+            // Actualizar si el nombre cambió
+            if ($materia->nombre !== $nombre) {
+                $materia->nombre = $nombre;
+                $materia->save();
+                $this->actualizados++;
+            }
+        } else {
+            // Crear nueva materia
+            $materia = Materia::create([
+                'codigo' => $codigo,
+                'nombre' => $nombre,
+                'nivel' => $this->extraerNivel($codigo),
+                'creditos' => 4,
+            ]);
+            $this->materiasCreadas++;
+        }
+
+        return $materia;
+    }
+
+    /**
+     * Crea o actualiza un docente
+     */
+    protected function crearOActualizarDocente($nombreCompleto)
+    {
+        // Buscar usuario existente por nombre
+        $user = User::where('name', $nombreCompleto)->first();
+
+        if (!$user) {
+            // Separar nombres y apellidos
+            $partes = explode(' ', $nombreCompleto);
+            $cantidadPalabras = count($partes);
+
+            if ($cantidadPalabras < 2) {
+                throw new \Exception("Nombre de docente inválido: {$nombreCompleto}");
+            }
+
+            // Asumir: primeras 2 palabras = apellidos, resto = nombres
+            $apellidos = implode(' ', array_slice($partes, 0, min(2, $cantidadPalabras - 1)));
+            $nombres = implode(' ', array_slice($partes, min(2, $cantidadPalabras - 1)));
+
+            if (empty($nombres)) {
+                $apellidos = $partes[0];
+                $nombres = $partes[1];
+            }
+
+            // Generar email único
+            $emailBase = $this->generarEmail($nombres, $apellidos);
+            $email = $this->generarEmailUnico($emailBase);
+
+            // Crear usuario
+            $user = User::create([
+                'name' => $nombreCompleto,
+                'email' => $email,
+                'password' => Hash::make('docente123'),
+            ]);
+
+            // Asignar rol docente
+            $rolDocente = Role::where('name', 'docente')->first();
+            if ($rolDocente) {
+                $user->roles()->sync([$rolDocente->id]);
+            }
+
+            $this->docentesCreados++;
+        }
+
+        // Buscar o crear perfil de docente
+        $docente = Docente::where('user_id', $user->id)->first();
+
+        if (!$docente) {
+            $partes = explode(' ', $nombreCompleto);
+            $apellidos = $partes[0] ?? '';
+            $nombres = isset($partes[1]) ? implode(' ', array_slice($partes, 1)) : '';
+
+            $docente = Docente::create([
+                'user_id' => $user->id,
+                'codigo_docente' => $this->generarCodigoDocente($nombres, $apellidos),
+                'titulo' => 'Lic.',
+                'facultad' => 'FCYT',
+                'estado' => 'activo',
+                'fecha_contratacion' => now(),
+            ]);
+        }
+
+        return $docente;
+    }
+
+    /**
+     * Crea o actualiza un grupo
+     */
+    protected function crearOActualizarGrupo($materia, $docente, $nombreGrupo)
+    {
+        $grupo = Grupo::where('semestre_id', $this->semestre->id)
+            ->where('materia_id', $materia->id)
+            ->where('nombre', $nombreGrupo)
+            ->first();
+
+        if ($grupo) {
+            // Actualizar docente si cambió
+            if ($grupo->docente_id !== $docente->id) {
+                $grupo->docente_id = $docente->id;
+                $grupo->save();
+                $this->actualizados++;
+            }
+        } else {
+            // Crear nuevo grupo
+            $grupo = Grupo::create([
+                'semestre_id' => $this->semestre->id,
+                'materia_id' => $materia->id,
+                'docente_id' => $docente->id,
+                'nombre' => $nombreGrupo,
+            ]);
+            $this->gruposCreados++;
+        }
+
+        return $grupo;
+    }
+
+    /**
+     * Procesa los pares DIA-HORA del Excel
+     * Formato: columna 5 = DIA, columna 6 = HORA, columna 7 = DIA, columna 8 = HORA...
+     */
+    protected function procesarHorarios($row, $grupo, $rowIndex)
+    {
+        $horariosCreados = 0;
+        $columnIndex = 5; // Empezar desde columna 5 (después de DOCENTE)
+
+        // Procesar hasta 4 pares de DIA-HORA
+        for ($i = 0; $i < 4; $i++) {
+            if ($columnIndex >= $row->count()) {
+                break; // No hay más columnas
+            }
+
+            $diaValue = trim($row[$columnIndex] ?? '');
+            $horaValue = trim($row[$columnIndex + 1] ?? '');
+
+            // Si no hay día o hora, pasar al siguiente par
+            if (empty($diaValue) && empty($horaValue)) {
+                $columnIndex += 2;
+                continue;
+            }
+
+            // Validar que ambos estén presentes
+            if (empty($diaValue) || empty($horaValue)) {
+                $this->errores[] = "Fila " . ($rowIndex + 2) . ": Par DIA-HORA incompleto en columnas " . ($columnIndex + 1) . "-" . ($columnIndex + 2);
+                $columnIndex += 2;
+                continue;
+            }
+
+            // Normalizar día
+            $dia = $this->normalizarDia($diaValue);
+            if (!$dia) {
+                $this->errores[] = "Fila " . ($rowIndex + 2) . ": Día inválido '{$diaValue}' en columna " . ($columnIndex + 1);
+                $columnIndex += 2;
+                continue;
+            }
+
+            // Parsear horario (formato: "18:15-20:30" o "7:00-8:30")
+            $horarios = $this->parseHorario($horaValue);
+            if (!$horarios) {
+                $this->errores[] = "Fila " . ($rowIndex + 2) . ": Formato de hora inválido '{$horaValue}' en columna " . ($columnIndex + 2);
+                $columnIndex += 2;
+                continue;
+            }
+
+            // Crear horario
+            Horario::create([
+                'grupo_id' => $grupo->id,
+                'dia_semana' => $dia,
+                'hora_inicio' => $horarios['inicio'],
+                'hora_fin' => $horarios['fin'],
+                'aula_id' => null,
+            ]);
+
+            $horariosCreados++;
+            $this->horariosCreados++;
+            $columnIndex += 2;
+        }
+
+        if ($horariosCreados === 0) {
+            throw new \Exception("No se encontraron horarios válidos");
+        }
+    }
+
+    /**
+     * Genera el nombre del grupo
+     */
+    protected function generarNombreGrupo($sem, $gr)
+    {
+        if (!empty($sem) && !empty($gr)) {
+            return "Sem {$sem} - Gr {$gr}";
+        } elseif (!empty($gr)) {
+            return "Grupo {$gr}";
+        } else {
+            return "Grupo 1";
+        }
+    }
+
+    /**
+     * Normaliza el nombre del día
+     */
+    protected function normalizarDia($dia)
+    {
+        $dia = mb_strtolower(trim($dia));
+        
+        $mapaDias = [
+            'lun' => 'Lunes',
+            'lunes' => 'Lunes',
+            'mar' => 'Martes',
+            'martes' => 'Martes',
+            'mie' => 'Miércoles',
+            'miércoles' => 'Miércoles',
+            'mier' => 'Miércoles',
+            'jue' => 'Jueves',
+            'jueves' => 'Jueves',
+            'vie' => 'Viernes',
+            'viernes' => 'Viernes',
+            'sab' => 'Sábado',
+            'sábado' => 'Sábado',
+            'dom' => 'Domingo',
+            'domingo' => 'Domingo',
+        ];
+
+        return $mapaDias[$dia] ?? null;
+    }
+
+    /**
+     * Parsea el horario en formato "18:15-20:30" o "7:00-8:30" o "7:00- 8:30"
+     */
+    protected function parseHorario($horarioStr)
+    {
+        $horarioStr = trim($horarioStr);
+        // Eliminar todos los espacios
+        $horarioStr = preg_replace('/\s+/', '', $horarioStr);
+        
+        // Formato: "18:15-20:30" o "7:00-8:30"
+        if (preg_match('/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/', $horarioStr, $matches)) {
+            return [
+                'inicio' => sprintf('%02d:%02d:00', $matches[1], $matches[2]),
+                'fin' => sprintf('%02d:%02d:00', $matches[3], $matches[4]),
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Genera email para el docente
+     */
+    protected function generarEmail($nombres, $apellidos)
+    {
+        $nombre = Str::slug(explode(' ', $nombres)[0]);
+        $apellido = Str::slug(explode(' ', $apellidos)[0]);
+        
+        return strtolower($nombre . '.' . $apellido) . '@ficct.edu.bo';
+    }
+
+    /**
+     * Asegura que el email sea único
+     */
+    protected function generarEmailUnico($emailBase)
+    {
+        $email = $emailBase;
+        $contador = 1;
+        
+        while (User::where('email', $email)->exists()) {
+            $email = str_replace('@', $contador . '@', $emailBase);
+            $contador++;
+        }
+        
+        return $email;
+    }
+
+    /**
+     * Genera código único para el docente
+     */
+    protected function generarCodigoDocente($nombres, $apellidos)
+    {
+        $codigo = strtoupper(
+            substr($apellidos, 0, 3) . 
+            substr($nombres, 0, 3) . 
+            rand(100, 999)
+        );
+        
+        while (Docente::where('codigo_docente', $codigo)->exists()) {
+            $codigo = strtoupper(
+                substr($apellidos, 0, 3) . 
+                substr($nombres, 0, 3) . 
+                rand(100, 999)
+            );
+        }
+        
+        return $codigo;
+    }
+
+    /**
+     * Extrae el nivel de la materia del código
+     */
+    protected function extraerNivel($codigo)
+    {
+        if (preg_match('/(\d)/', $codigo, $matches)) {
+            return (int) $matches[1];
+        }
+        return 1;
+    }
+
+    // Getters para estadísticas
+    public function getErrores() { return $this->errores; }
+    public function getImportados() { return $this->importados; }
+    public function getActualizados() { return $this->actualizados; }
+    public function getDocentesCreados() { return $this->docentesCreados; }
+    public function getMateriasCreadas() { return $this->materiasCreadas; }
+    public function getGruposCreados() { return $this->gruposCreados; }
+    public function getHorariosCreados() { return $this->horariosCreados; }
+}
+
+
+    /**
+     * @param Collection $rows
+     */
+    public function collection(Collection $rows)
+    {
+        // Saltar la primera fila (encabezados)
+        $filas = $rows->slice(1);
+
+        foreach ($filas as $index => $row) {
+            try {
+                // Validar que la fila tenga al menos 5 columnas (SIGLA, SEM, GR, MATERIA, DOCENTE)
+                if ($row->count() < 5) {
+                    continue; // Fila vacía
+                }
+
+                $sigla = trim($row[0] ?? '');
+                $sem = trim($row[1] ?? '');
+                $gr = trim($row[2] ?? '');
+                $nombreMateria = trim($row[3] ?? '');
+                $nombreDocente = trim($row[4] ?? '');
+
+                // Validar datos mínimos
+                if (empty($sigla) || empty($nombreMateria) || empty($nombreDocente)) {
+                    continue;
+                }
+
+                DB::beginTransaction();
+
+                // 1. CREAR O BUSCAR MATERIA
+                $materia = $this->procesarMateria($sigla, $nombreMateria);
+
+                // 2. CREAR O BUSCAR DOCENTE
+                $docente = $this->procesarDocente($nombreDocente);
+
+                // 3. CREAR O BUSCAR GRUPO
+                $nombreGrupo = !empty($sem) && !empty($gr) ? "Sem {$sem} - Gr {$gr}" : "Grupo {$gr}";
+                $grupo = $this->procesarGrupo($materia, $docente, $nombreGrupo);
+
+                // 4. PROCESAR HORARIOS (DIA HORA DIA HORA DIA HORA DIA HORA)
+                // A partir de la columna 5, vienen pares de DIA y HORA
+                $this->procesarHorariosPares($row, $grupo, 5);
+
+                $this->importados++;
+                DB::commit();
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $this->errores[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
+            }
+        }
+    }
+
+    /**
+     * Procesa y crea/actualiza la materia
+     */
+    protected function procesarMateria($sigla, $nombreMateria)
+    {
+        $codigoMateria = strtoupper($sigla);
+        $nombreMateria = mb_strtoupper($nombreMateria);
+
+        $materia = Materia::where('codigo', $codigoMateria)->first();
+
+        if (!$materia) {
+            $materia = Materia::create([
+                'codigo' => $codigoMateria,
+                'nombre' => $nombreMateria,
+                'nivel' => $this->extraerNivel($codigoMateria),
+                'creditos' => 4,
+            ]);
+            $this->materiasCreadas++;
+        } else if ($materia->nombre !== $nombreMateria) {
+            $materia->nombre = $nombreMateria;
+            $materia->save();
+            $this->actualizados++;
+        }
+
+        return $materia;
+    }
+
+    /**
+     * Procesa y crea/actualiza el docente
+     */
+    protected function procesarDocente($nombreCompleto)
+    {
+        $nombreCompleto = mb_strtoupper(trim($nombreCompleto));
+        
+        // Separar apellidos y nombres
+        // Formato: "APELLIDO1 APELLIDO2 NOMBRE1 NOMBRE2"
+        $partes = explode(' ', $nombreCompleto);
+        
+        if (count($partes) < 2) {
+            throw new \Exception("El nombre del docente debe tener al menos apellido y nombre");
+        }
+
+        // Asumimos que los primeros 2 son apellidos y el resto nombres
+        $apellidos = implode(' ', array_slice($partes, 0, min(2, count($partes) - 1)));
+        $nombres = implode(' ', array_slice($partes, min(2, count($partes) - 1)));
+        
+        if (empty($nombres)) {
+            // Si solo hay 2 palabras, la primera es apellido y la segunda nombre
+            $apellidos = $partes[0];
+            $nombres = $partes[1];
+        }
+
+        // Buscar usuario existente por nombre completo
+        $user = User::where('name', $nombreCompleto)->first();
+
+        if (!$user) {
+            // Generar email único
+            $emailBase = $this->generarEmail($nombres, $apellidos);
+            $email = $this->generarEmailUnico($emailBase);
+            
+            $user = User::create([
+                'name' => $nombreCompleto,
+                'email' => $email,
+                'password' => Hash::make('docente123'),
+            ]);
+
+            // Asignar rol de docente
+            $rolDocente = \App\Models\Role::where('name', 'docente')->first();
+            if ($rolDocente) {
+                $user->roles()->attach($rolDocente->id);
+            }
+            
+            $this->docentesCreados++;
+        }
+
+        // Buscar o crear perfil de docente
+        $docente = Docente::where('user_id', $user->id)->first();
+        
+        if (!$docente) {
+            $docente = Docente::create([
+                'user_id' => $user->id,
+                'codigo_docente' => $this->generarCodigoDocente($nombres, $apellidos),
+                'titulo' => 'Lic.',
+                'facultad' => 'FCYT',
+                'estado' => 'activo',
+                'fecha_contratacion' => now(),
+            ]);
+        }
+
+        return $docente;
+    }
+
+    /**
+     * Procesa y crea/actualiza el grupo
+     */
+    protected function procesarGrupo($materia, $docente, $nombreGrupo)
+    {
+        $grupo = Grupo::where('semestre_id', $this->semestre->id)
+            ->where('materia_id', $materia->id)
+            ->where('nombre', $nombreGrupo)
+            ->first();
+
+        if (!$grupo) {
+            $grupo = Grupo::create([
+                'semestre_id' => $this->semestre->id,
+                'materia_id' => $materia->id,
+                'docente_id' => $docente->id,
+                'nombre' => $nombreGrupo,
+            ]);
+        } else if ($grupo->docente_id !== $docente->id) {
+            $grupo->docente_id = $docente->id;
+            $grupo->save();
+            $this->actualizados++;
+        }
+
+        return $grupo;
+    }
+
+    /**
+     * Procesa los horarios que vienen en pares (DIA HORA DIA HORA...)
+     */
+    protected function procesarHorariosPares($row, $grupo, $startColumn)
+    {
+        $diasProcesados = 0;
+        $columnIndex = $startColumn;
+
+        // Procesar hasta 4 pares de DIA-HORA
+        while ($columnIndex < $row->count() - 1 && $diasProcesados < 4) {
+            $diaValue = trim($row[$columnIndex] ?? '');
+            $horarioValue = trim($row[$columnIndex + 1] ?? '');
+
+            // Si no hay día o horario, continuar al siguiente par
+            if (empty($diaValue) || empty($horarioValue)) {
+                $columnIndex += 2;
+                continue;
+            }
+
+            $dia = $this->normalizarDia($diaValue);
+            $horarios = $this->parseHorario($horarioValue);
+            
+            if (!$dia || !$horarios) {
+                $columnIndex += 2;
+                continue;
+            }
+
+            // Crear o actualizar horario
+            Horario::updateOrCreate(
+                [
+                    'grupo_id' => $grupo->id,
+                    'dia_semana' => $dia,
+                ],
+                [
+                    'hora_inicio' => $horarios['inicio'],
+                    'hora_fin' => $horarios['fin'],
+                    'aula_id' => null, // No hay aulas en este formato
+                ]
+            );
+
+            $diasProcesados++;
+            $columnIndex += 2;
+        }
+
+        if ($diasProcesados === 0) {
+            throw new \Exception("No se encontraron horarios válidos");
+        }
+    }
+
+    /**
+     * Normaliza el nombre del día
+     */
+    protected function normalizarDia($dia)
+    {
+        $dia = mb_strtolower(trim($dia));
+        
+        $mapaDias = [
+            'lun' => 'Lunes',
+            'lunes' => 'Lunes',
+            'mar' => 'Martes',
+            'martes' => 'Martes',
+            'mie' => 'Miércoles',
+            'miércoles' => 'Miércoles',
+            'mier' => 'Miércoles',
+            'jue' => 'Jueves',
+            'jueves' => 'Jueves',
+            'vie' => 'Viernes',
+            'viernes' => 'Viernes',
+            'sab' => 'Sábado',
+            'sábado' => 'Sábado',
+            'dom' => 'Domingo',
+            'domingo' => 'Domingo',
+        ];
+
+        return $mapaDias[$dia] ?? null;
+    }
+
+    /**
+     * Parsea el horario en formato "18:15-20:30" o "7:00- 8:30"
+     */
+    protected function parseHorario($horarioStr)
+    {
+        $horarioStr = trim($horarioStr);
+        $horarioStr = preg_replace('/\s+/', '', $horarioStr); // Eliminar todos los espacios
+        
+        // Formato: "18:15-20:30" o "7:00-8:30"
+        if (preg_match('/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/', $horarioStr, $matches)) {
+            return [
+                'inicio' => sprintf('%02d:%02d:00', $matches[1], $matches[2]),
+                'fin' => sprintf('%02d:%02d:00', $matches[3], $matches[4]),
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Genera email único para el docente
+     */
+    protected function generarEmail($nombres, $apellidos)
+    {
+        $nombre = Str::slug(explode(' ', $nombres)[0]);
+        $apellido = Str::slug(explode(' ', $apellidos)[0]);
+        
+        return strtolower($nombre . '.' . $apellido) . '@ficct.edu.bo';
+    }
+
+    /**
+     * Asegura que el email sea único
+     */
+    protected function generarEmailUnico($emailBase)
+    {
+        $email = $emailBase;
+        $contador = 1;
+        
+        while (User::where('email', $email)->exists()) {
+            $email = str_replace('@', $contador . '@', $emailBase);
+            $contador++;
+        }
+        
+        return $email;
+    }
+
+    /**
+     * Genera código único para el docente
+     */
+    protected function generarCodigoDocente($nombres, $apellidos)
+    {
+        $codigo = strtoupper(
+            substr($apellidos, 0, 3) . 
+            substr($nombres, 0, 3) . 
+            rand(100, 999)
+        );
+        
+        // Asegurar que sea único
+        while (Docente::where('codigo_docente', $codigo)->exists()) {
+            $codigo = strtoupper(
+                substr($apellidos, 0, 3) . 
+                substr($nombres, 0, 3) . 
+                rand(100, 999)
+            );
+        }
+        
+        return $codigo;
+    }
+
+    /**
+     * Extrae el nivel de la materia del código
+     */
+    protected function extraerNivel($codigo)
+    {
+        // Ejemplo: MAT101 -> nivel 1, MAT201 -> nivel 2
+        if (preg_match('/(\d)/', $codigo, $matches)) {
+            return (int) $matches[1];
+        }
+        
+        return 1;
+    }
+
+    /**
+     * Obtiene los errores de importación
+     */
+    public function getErrores()
+    {
+        return $this->errores;
+    }
+
+    /**
+     * Obtiene el número de registros importados
+     */
+    public function getImportados()
+    {
+        return $this->importados;
+    }
+
+    /**
+     * Obtiene el número de registros actualizados
+     */
+    public function getActualizados()
+    {
+        return $this->actualizados;
+    }
+
+    /**
+     * Obtiene el número de docentes creados
+     */
+    public function getDocentesCreados()
+    {
+        return $this->docentesCreados;
+    }
+
+    /**
+     * Obtiene el número de materias creadas
+     */
+    public function getMateriasCreadas()
+    {
+        return $this->materiasCreadas;
+    }
+}

@@ -1,0 +1,12 @@
+@startuml
+class Horario
+class Docente
+class Asistencia
+
+Horario "1" -- "1" Docente
+Asistencia "*" -- "1" Horario
+Asistencia "*" -- "1" Docente
+
+note "Clases implicadas en marcar asistencia (Botón/QR)" as N
+N .. (Horario,Docente,Asistencia)
+@enduml

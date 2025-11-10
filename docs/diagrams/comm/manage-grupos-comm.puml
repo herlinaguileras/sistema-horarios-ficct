@@ -1,0 +1,17 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Grupos
+actor Admin
+participant "GrupoController" as GC
+participant "Grupo Model / DB" as GDB
+participant "Semestre Model" as SDB
+participant "Materia Model" as MDB
+participant "Docente Model" as DDB
+
+Admin -> GC: POST /grupos (form)
+GC -> SDB: validate semestre_id
+GC -> MDB: validate materia_id
+GC -> DDB: validate docente_id
+GC -> GDB: create grupo
+GDB --> GC: grupo
+GC --> Admin: redirect grupos.index
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+left to right direction
+actor Admin
+actor Docente
+actor Visitante
+
+rectangle "Sistema de Horarios" {
+  Admin -- (Gestionar Usuarios)
+  Admin -- (Gestionar Materias)
+  Admin -- (Generar Horarios)
+  Docente -- (Ver Horario)
+  Visitante -- (Ver Horario Público)
+  (Login) .> Admin : <<include>>
+  (Login) .> Docente : <<include>>
+}
+@enduml

@@ -1,0 +1,98 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-004: Perfil del Usuario
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "update-profile-information-form.blade.php" as ProfileView <<Boundary>> {
+  - name: string
+  - email: string
+  --
+  + mostrarFormulario(): HTML
+  + enviarActualizacion(): PATCH
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class ProfileController <<Control>> {
+  --
+  + edit(request: Request): View
+  + update(request: ProfileUpdateRequest): RedirectResponse
+  + destroy(request: Request): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class User <<Entity>> {
+  - id: bigint
+  - name: string
+  - email: string
+  - email_verified_at: timestamp
+  - password: string (hashed)
+  - remember_token: string
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + docente(): Docente
+  + roles(): Collection<Role>
+  + hasRole(roleName: string): boolean
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+ProfileView ..> ProfileController : <<submit>> route('profile.update')
+ProfileController --> User : <<update>>
+ProfileController ..> ProfileView : <<redirect>> route('profile.edit')
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of ProfileView
+  **Vista Actualizar Información del Perfil**
+  - Formulario con campos name y email
+  - PATCH a route('profile.update')
+  - Validación en tiempo real
+  - Mensaje de confirmación al guardar
+  - Verificación de email si se modifica
+end note
+
+note left of ProfileController
+  **Controlador de Perfil**
+
+  edit(Request):
+    - Carga vista profile.edit
+    - Pasa usuario autenticado
+
+  update(ProfileUpdateRequest):
+    1. Valida datos (name, email único)
+    2. Actualiza usuario con fill()
+    3. Si email cambió: email_verified_at = null
+    4. Guarda cambios: save()
+    5. Redirige con status 'profile-updated'
+end note
+
+note bottom of User
+  **Entidad Usuario**
+  - Modelo Eloquent (Authenticatable)
+  - Tabla: users
+  - Validación mediante ProfileUpdateRequest
+  - Al actualizar email se invalida verificación
+  - isDirty() detecta cambios en atributos
+end note
+
+@enduml

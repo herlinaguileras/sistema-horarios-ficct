@@ -25,8 +25,8 @@
 
                     {{-- Botones de Acción --}}
                     <div class="flex items-center justify-between mb-4">
-                        {{-- Volver a la lista de horarios del grupo --}}
-                        <a href="{{ route('grupos.horarios.index', $horario->grupo) }}" class="text-blue-600 hover:text-blue-900">&larr; Volver al Horario del Grupo</a>
+                        {{-- Volver a la lista de horarios --}}
+                        <a href="{{ route('horarios.index') }}" class="text-blue-600 hover:text-blue-900">&larr; Volver a Horarios</a>
 
                         {{-- Botón para ir al formulario de registro manual --}}
                         <a href="{{ route('horarios.asistencias.create', $horario) }}" class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-gray-800 border border-transparent rounded-md hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25">

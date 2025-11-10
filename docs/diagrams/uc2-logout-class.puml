@@ -1,0 +1,100 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-002: Cierre de Sesión
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "navigation.blade.php" as NavigationView <<Boundary>> {
+  - logout_button: form
+  --
+  + mostrarBotonSalir(): HTML
+  + enviarSolicitudLogout(): POST
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class AuthenticatedSessionController <<Control>> {
+  --
+  + create(): View
+  + store(request: LoginRequest): RedirectResponse
+  + destroy(request: Request): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class User <<Entity>> {
+  - id: bigint
+  - name: string
+  - email: string
+  - email_verified_at: timestamp
+  - password: string (hashed)
+  - remember_token: string
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + docente(): Docente
+  + roles(): Collection<Role>
+  + hasRole(roleName: string): boolean
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+NavigationView ..> AuthenticatedSessionController : <<submit>> route('logout')
+AuthenticatedSessionController --> User : <<logout>>
+AuthenticatedSessionController ..> NavigationView : <<redirect>> "/"
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of NavigationView
+  **Vista Navegación**
+  - Muestra botón "Log Out" en navbar
+  - Formulario POST a route('logout')
+  - CSRF token incluido (@csrf)
+  - Visible solo para usuarios autenticados
+end note
+
+note left of AuthenticatedSessionController
+  **Controlador de Autenticación**
+
+  destroy(Request):
+    1. Auth::guard('web')->logout()
+       - Cierra sesión del usuario
+
+    2. request->session()->invalidate()
+       - Invalida la sesión actual
+
+    3. request->session()->regenerateToken()
+       - Regenera token CSRF
+
+    4. return redirect('/')
+       - Redirecciona a página principal
+end note
+
+note bottom of User
+  **Entidad Usuario**
+  - Modelo Eloquent (Authenticatable)
+  - Tabla: users
+  - Session guardada en tabla 'sessions'
+  - Al cerrar sesión:
+    · Se limpia Auth::user()
+    · Se destruye session_id
+    · Se limpia remember_token (si existía)
+end note
+
+@enduml

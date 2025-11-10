@@ -15,11 +15,10 @@ class Materia extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-    'nombre',
-    'sigla', // <-- CAMBIO AQUÍ
-    'nivel_semestre',
-    'carrera',
-];
+        'nombre',
+        'sigla',
+        'nivel_semestre',
+    ];
 
     /**
      * Una materia puede estar en muchos Grupos.
@@ -27,5 +26,13 @@ class Materia extends Model
     public function grupos()
     {
         return $this->hasMany(Grupo::class);
+    }
+
+    /**
+     * Una materia pertenece a muchas carreras (relación many-to-many).
+     */
+    public function carreras()
+    {
+        return $this->belongsToMany(Carrera::class, 'carrera_materia');
     }
 }

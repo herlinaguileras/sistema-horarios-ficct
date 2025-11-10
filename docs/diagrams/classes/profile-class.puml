@@ -1,0 +1,15 @@
+@startuml
+class User {
+  +id: int
+  +name: string
+  +email: string
+  +password: string
+  +email_verified_at: datetime
+  +remember_token: string
+  +updateProfile()
+  +deleteAccount()
+}
+
+note "Perfil de usuario: campos y operaciones (basado en `ProfileController` y `User` model)" as N
+N .. User
+@enduml

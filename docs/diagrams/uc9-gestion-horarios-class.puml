@@ -1,0 +1,165 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-009: Gestión de Horarios
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "index.blade.php" as HorariosView <<Boundary>> {
+  - lista_horarios: tabla HTML
+  - boton_anadir: link
+  - boton_asistencia: link
+  - boton_eliminar: form
+  --
+  + mostrarListaHorarios(grupo): HTML
+  + navegarCrear(grupo): GET
+  + navegarAsistencia(horario): GET
+  + eliminarHorario(id): DELETE
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class HorarioController <<Control>> {
+  --
+  + index(grupo: Grupo): View
+  + create(grupo: Grupo): View
+  + store(request: Request, grupo: Grupo): RedirectResponse
+  + destroy(horario: Horario): RedirectResponse
+  + showQrCode(horario: Horario): View
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class Horario <<Entity>> {
+  - id: bigint
+  - grupo_id: bigint
+  - aula_id: bigint
+  - dia_semana: integer (1-7)
+  - hora_inicio: time
+  - hora_fin: time
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + grupo(): Grupo
+  + aula(): Aula
+  + asistencias(): Collection<Asistencia>
+}
+
+class Grupo <<Entity>> {
+  - id: bigint
+  - semestre_id: bigint
+  - materia_id: bigint
+  - docente_id: bigint
+  - nombre: string
+  --
+  + semestre(): Semestre
+  + materia(): Materia
+  + docente(): Docente
+  + horarios(): Collection<Horario>
+}
+
+class Aula <<Entity>> {
+  - id: bigint
+  - nombre: string
+  - piso: integer
+  - tipo: string
+  - capacidad: integer
+  --
+  + horarios(): Collection<Horario>
+}
+
+class Asistencia <<Entity>> {
+  - id: bigint
+  - horario_id: bigint
+  - fecha: date
+  - estado: string
+  - observacion: text
+  --
+    + horario(): Horario
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+HorariosView ..> HorarioController : <<request>> route('grupos.horarios.index')
+HorarioController --> Horario : <<CRUD>>
+HorarioController ..> HorariosView : <<render>> view('horarios.index')
+
+Horario "*" --> "1" Grupo : pertenece a
+Horario "*" --> "1" Aula : se imparte en
+Horario "1" --> "*" Asistencia : tiene registros de
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of HorariosView
+  **Vista Lista de Horarios (por Grupo)**
+  - Muestra horarios de un grupo específico
+  - Columnas: Día, Hora Inicio, Hora Fin, Aula
+  - Encabezado: Materia, Grupo, Docente, Semestre
+  - Botón "Añadir Horario"
+  - Link "Asistencia" para cada horario
+  - Botón "Eliminar" con confirmación
+  - Eager loading: aula
+  - Ruta: resources/views/horarios/index.blade.php
+end note
+
+note left of HorarioController
+  **Controlador de Gestión de Horarios**
+
+  index(Grupo):
+    - Carga horarios del grupo específico
+    - $grupo->horarios()->with('aula')->get()
+    - Retorna vista con grupo y horarios
+
+  create(Grupo):
+    - Carga Aula::all() para menú desplegable
+    - Retorna formulario de creación
+
+  store(Request, Grupo):
+    1. Valida: dia_semana (1-7), aula_id, horas
+    2. hora_fin debe ser after hora_inicio
+    3. VALIDACIÓN ANTI-CONFLICTOS:
+       - Conflicto de Aula (aula ocupada)
+       - Conflicto de Docente (docente ocupado)
+       - Conflicto de Grupo (grupo tiene otra clase)
+    4. Usa función de solapamiento de horarios
+    5. Si no hay conflictos: crea horario
+    6. Redirige a grupos.horarios.index
+
+  destroy(Horario):
+    - Guarda referencia al grupo
+    - $horario->delete()
+    - Redirige a lista de horarios del grupo
+
+  showQrCode(Horario):
+    - Genera vista con QR para asistencia
+    - Eager loads: grupo.materia, aula, grupo.docente.user
+end note
+
+note bottom of Horario
+  **Entidad Horario**
+  - Modelo Eloquent
+  - Tabla: horarios
+  - Relación belongsTo: Grupo, Aula
+  - Relación hasMany: Asistencia
+  - Fillable: grupo_id, aula_id, dia_semana, hora_inicio, hora_fin
+  - dia_semana: 1=Lunes, 2=Martes, ..., 7=Domingo
+  - Validación de conflictos de horarios (aula, docente, grupo)
+  - Representa una clase semanal específica
+end note
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Administrador
+participant "index.blade.php" as AsistenciasView <<Boundary>>
+participant "AsistenciaController" as Controller <<Control>>
+participant "Asistencia" as AsistenciaModel <<Entity>>
+participant "Horario" as HorarioModel <<Entity>>
+participant "AuditLog" as AuditLogModel <<Entity>>
+
+Administrador -> AsistenciasView: accederHistorialAsistencia(horario)
+activate AsistenciasView
+
+AsistenciasView -> Controller: GET route('horarios.asistencias.index', horario)
+activate Controller
+
+Controller -> Controller: index(Horario)
+
+Controller -> HorarioModel: asistencias()->with('docente.user')->get()
+activate HorarioModel
+
+HorarioModel --> Controller: listaAsistencias
+deactivate HorarioModel
+
+Controller --> AsistenciasView: view('asistencias.index', horario, asistencias)
+deactivate Controller
+
+AsistenciasView --> Administrador: mostrarHistorialAsistencia()
+
+Administrador -> AsistenciasView: clickRegistrarManual()
+
+AsistenciasView -> Controller: GET route('horarios.asistencias.create', horario)
+activate Controller
+
+Controller -> Controller: create(Horario)
+
+Controller --> AsistenciasView: view('asistencias.create', horario)
+deactivate Controller
+
+AsistenciasView --> Administrador: mostrarFormulario()
+
+Administrador -> AsistenciasView: submitForm(fecha, hora, estado, método, justificación)
+
+AsistenciasView -> Controller: POST route('horarios.asistencias.store', horario)
+activate Controller
+
+Controller -> Controller: store(Request, Horario)
+
+Controller -> Controller: validarCampos(justificación min:10)
+
+Controller -> Controller: validarDiaSemana(fecha coincide con horario)
+
+alt día NO coincide
+    Controller --> AsistenciasView: back()->withErrors('día incorrecto')
+    AsistenciasView --> Administrador: mostrarError()
+else día correcto
+    Controller -> Controller: validarVentanaTiempo(±15min desde inicio)
+
+    alt hora fuera de ventana
+        Controller --> AsistenciasView: back()->withErrors('hora fuera de ventana')
+        AsistenciasView --> Administrador: mostrarError()
+    else hora válida
+        Controller -> AsistenciaModel: create(validatedData)
+        activate AsistenciaModel
+
+        AsistenciaModel --> Controller: asistenciaCreada
+        deactivate AsistenciaModel
+
+        Controller -> AuditLogModel: registrarAccion('manual_attendance_create')
+        activate AuditLogModel
+
+        AuditLogModel --> Controller: registroCreado
+        deactivate AuditLogModel
+
+        Controller -> Controller: redirect()->route('horarios.asistencias.index', horario)
+
+        Controller --> AsistenciasView: RedirectResponse(status: '¡Asistencia registrada!')
+        deactivate Controller
+
+        AsistenciasView --> Administrador: mostrarMensajeExito()
+    end
+end
+
+deactivate AsistenciasView
+
+@enduml

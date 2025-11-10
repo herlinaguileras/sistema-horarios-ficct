@@ -1,0 +1,8 @@
+@startuml
+left to right direction
+actor Administrador
+rectangle Sistema {
+  usecase "Registrar docente" as UC3
+}
+Administrador --> UC3
+@enduml

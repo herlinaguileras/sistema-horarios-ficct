@@ -1,0 +1,9 @@
+@startuml
+node "Servidor (Railway)" {
+  container "nginx" as NGINX
+  container "php-fpm (Laravel)" as PHP
+}
+database "Postgres (Railway)" as PG
+NGINX --> PHP
+PHP --> PG
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+class User {
+	+id: int
+	+name: string
+	+email: string
+}
+
+class Docente {
+	+id: int
+	+user_id: int
+	+codigo_docente: string
+	+carnet_identidad: string
+	+telefono: string
+	+facultad: string
+	+estado: string
+}
+
+class Titulo {
+	+id: int
+	+docente_id: int
+	+nombre: string
+}
+
+class Role {
+	+id: int
+	+name: string
+	+description: string
+}
+
+User "1" -- "0..1" Docente
+Docente "1" -- "0..*" Titulo
+User "*" -- "*" Role : roles
+
+note "Clases implicadas en la gestión de docentes (atributos del modelo)" as N
+N .. (User,Docente,Titulo,Role)
+@enduml

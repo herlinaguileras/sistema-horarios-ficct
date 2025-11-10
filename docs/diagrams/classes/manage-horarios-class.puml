@@ -1,0 +1,34 @@
+@startuml
+class Horario {
+  +id: int
+  +grupo_id: int
+  +aula_id: int
+  +dia_semana: int
+  +hora_inicio: time
+  +hora_fin: time
+}
+
+class Grupo {
+  +id: int
+  +nombre: string
+  +docente_id: int
+}
+
+class Aula {
+  +id: int
+  +nombre: string
+  +piso: int
+}
+
+class Docente {
+  +id: int
+  +codigo_docente: string
+}
+
+Horario "1" -- "1" Grupo
+Horario "1" -- "1" Aula
+Grupo "1" -- "1" Docente
+
+note "Clases implicadas en la gestión de horarios y lógica anti-conflicto (atributos desde modelos)" as N
+N .. (Horario,Grupo,Aula,Docente)
+@enduml

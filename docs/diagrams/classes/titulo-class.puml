@@ -1,0 +1,10 @@
+@startuml
+class Titulo {
+  +id: int
+  +docente_id: int
+  +nombre: string
+}
+
+note "Modelo Titulo (atributos desde `app/Models/Titulo.php`)" as N
+N .. Titulo
+@enduml

@@ -1,0 +1,46 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Usuario
+participant "login.blade.php" as LoginView <<Boundary>>
+participant "AuthenticatedSessionController" as Controller <<Control>>
+participant "User" as UserModel <<Entity>>
+
+Usuario -> LoginView: ingresarCredenciales()
+activate LoginView
+
+LoginView -> LoginView: mostrarFormulario()
+
+Usuario -> LoginView: submitForm(email, password)
+
+LoginView -> Controller: POST route('login')
+activate Controller
+
+Controller -> Controller: store(LoginRequest)
+
+Controller -> Controller: request.authenticate()
+
+Controller -> UserModel: verificarCredenciales(email, password)
+activate UserModel
+
+UserModel -> UserModel: findByEmail(email)
+
+UserModel -> UserModel: validatePassword(password)
+
+UserModel --> Controller: credencialesValidas
+deactivate UserModel
+
+Controller -> Controller: regenerateSession()
+
+Controller -> Controller: redirectToIntended()
+
+Controller --> LoginView: RedirectResponse('/dashboard')
+deactivate Controller
+
+LoginView --> Usuario: redireccionarDashboard()
+deactivate LoginView
+
+@enduml

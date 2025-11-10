@@ -1,0 +1,78 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Docente
+participant "dashboard-docente.blade.php" as DashboardView <<Boundary>>
+participant "AsistenciaController" as Controller <<Control>>
+participant "Asistencia" as AsistenciaModel <<Entity>>
+participant "Horario" as HorarioModel <<Entity>>
+participant "Docente" as DocenteModel <<Entity>>
+
+Docente -> DashboardView: accederDashboard()
+activate DashboardView
+
+DashboardView -> DashboardView: mostrarHorarioSemanal()
+
+DashboardView --> Docente: visualizarClasesDeHoy()
+
+Docente -> DashboardView: clickMarcarAsistencia(horario)
+
+DashboardView -> Controller: POST route('asistencias.marcar', horario)
+activate Controller
+
+Controller -> Controller: marcarAsistencia(Request, Horario)
+
+Controller -> Controller: Carbon::now()
+
+Controller -> DocenteModel: verificarAutorizacion(Auth::user()->docente)
+activate DocenteModel
+
+DocenteModel -> DocenteModel: validarDocenteAsignado(horario->grupo->docente_id)
+
+alt docente NO autorizado
+    DocenteModel --> Controller: abort(403)
+    Controller --> DashboardView: Error 403
+    DashboardView --> Docente: mostrarErrorAutorizacion()
+else docente autorizado
+    DocenteModel --> Controller: autorizado
+    deactivate DocenteModel
+
+    Controller -> Controller: validarVentanaTiempo(±15min)
+
+    alt fuera de ventana
+        Controller --> DashboardView: withErrors('hora fuera de ventana')
+        DashboardView --> Docente: mostrarErrorVentana()
+    else dentro de ventana
+        Controller -> AsistenciaModel: verificarDuplicado(horario, fecha)
+        activate AsistenciaModel
+
+        alt ya marcó hoy
+            AsistenciaModel --> Controller: exists()
+            Controller --> DashboardView: withErrors('ya marcó hoy')
+            DashboardView --> Docente: mostrarErrorDuplicado()
+        else no marcó hoy
+            AsistenciaModel --> Controller: noExiste()
+            deactivate AsistenciaModel
+
+            Controller -> AsistenciaModel: create(horario_id, docente_id, fecha, hora, 'Presente', 'Boton')
+            activate AsistenciaModel
+
+            AsistenciaModel --> Controller: asistenciaCreada
+            deactivate AsistenciaModel
+
+            Controller -> Controller: redirect()->route('dashboard')
+
+            Controller --> DashboardView: RedirectResponse(status: '¡Asistencia marcada!')
+            deactivate Controller
+
+            DashboardView --> Docente: mostrarMensajeExito()
+        end
+    end
+end
+
+deactivate DashboardView
+
+@enduml

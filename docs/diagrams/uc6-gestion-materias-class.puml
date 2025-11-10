@@ -1,0 +1,109 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-006: Gestión de Materias
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "index.blade.php" as MateriasView <<Boundary>> {
+  - lista_materias: tabla HTML
+  - boton_nueva: link
+  - boton_editar: link
+  --
+  + mostrarListaMaterias(): HTML
+  + navegarCrear(): GET
+  + navegarEditar(id): GET
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class MateriaController <<Control>> {
+  --
+  + index(): View
+  + create(): View
+  + store(request: Request): RedirectResponse
+  + edit(materia: Materia): View
+  + update(request: Request, materia: Materia): RedirectResponse
+  + destroy(materia: Materia): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class Materia <<Entity>> {
+  - id: bigint
+  - nombre: string
+  - sigla: string
+  - nivel_semestre: integer
+  - carrera: string
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + grupos(): Collection<Grupo>
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+MateriasView ..> MateriaController : <<request>> route('materias.index')
+MateriaController --> Materia : <<CRUD>>
+MateriaController ..> MateriasView : <<render>> view('materias.index')
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of MateriasView
+  **Vista Lista de Materias**
+  - Tabla con materias registradas
+  - Columnas: Nombre, Sigla, Nivel, Carrera
+  - Botón "Registrar Nueva Materia"
+  - Link "Editar" por cada materia
+  - Mensaje de estado al crear/editar
+  - Ruta: resources/views/materias/index.blade.php
+end note
+
+note left of MateriaController
+  **Controlador de Gestión de Materias**
+
+  index():
+    - Obtiene todas las materias
+    - Materia::all()
+    - Retorna vista index
+
+  store(Request):
+    1. Valida datos (nombre, sigla única, nivel, carrera)
+    2. Materia::create($validatedData)
+    3. Redirige a materias.index
+    4. Mensaje: '¡Materia creada exitosamente!'
+
+  update(Request, Materia):
+    1. Valida con Rule::unique()->ignore($materia->id)
+    2. Actualiza materia con validated data
+    3. $materia->update($validatedData)
+    4. Redirige con mensaje de éxito
+end note
+
+note bottom of Materia
+  **Entidad Materia**
+  - Modelo Eloquent
+  - Tabla: materias
+  - Relación hasMany con Grupo
+  - Fillable: nombre, sigla, nivel_semestre, carrera
+  - Sigla única en base de datos
+  - Nivel mínimo: 1
+  - Carrera: string (Ej: "Ingeniería de Sistemas")
+end note
+
+@enduml

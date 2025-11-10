@@ -1,0 +1,91 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Administrador
+participant "index.blade.php" as DocentesView <<Boundary>>
+participant "DocenteController" as Controller <<Control>>
+participant "Docente" as DocenteModel <<Entity>>
+participant "User" as UserModel <<Entity>>
+participant "Titulo" as TituloModel <<Entity>>
+participant "Role" as RoleModel <<Entity>>
+
+Administrador -> DocentesView: accederGestionDocentes()
+activate DocentesView
+
+DocentesView -> Controller: GET route('docentes.index')
+activate Controller
+
+Controller -> Controller: index()
+
+Controller -> DocenteModel: with('user')->get()
+activate DocenteModel
+
+DocenteModel --> Controller: listaDocentes
+deactivate DocenteModel
+
+Controller --> DocentesView: view('docentes.index', docentes)
+deactivate Controller
+
+DocentesView --> Administrador: mostrarListaDocentes()
+
+Administrador -> DocentesView: clickRegistrarNuevo()
+
+DocentesView -> Controller: GET route('docentes.create')
+activate Controller
+
+Controller -> Controller: create()
+
+Controller --> DocentesView: view('docentes.create')
+deactivate Controller
+
+DocentesView --> Administrador: mostrarFormulario()
+
+Administrador -> DocentesView: submitForm(datos)
+
+DocentesView -> Controller: POST route('docentes.store')
+activate Controller
+
+Controller -> Controller: store(Request)
+
+Controller -> Controller: validarDatos()
+
+Controller -> Controller: DB::transaction()
+
+Controller -> UserModel: create(name, email, password)
+activate UserModel
+
+UserModel -> UserModel: Hash::make(password)
+
+UserModel --> Controller: usuarioCreado
+deactivate UserModel
+
+Controller -> DocenteModel: create(user_id, codigo, CI, telefono)
+activate DocenteModel
+
+DocenteModel --> Controller: docenteCreado
+deactivate DocenteModel
+
+Controller -> TituloModel: create(docente_id, titulo)
+activate TituloModel
+
+TituloModel --> Controller: tituloCreado
+deactivate TituloModel
+
+Controller -> RoleModel: asignarRol('docente')
+activate RoleModel
+
+RoleModel --> Controller: rolAsignado
+deactivate RoleModel
+
+Controller -> Controller: redirect()->route('docentes.index')
+
+Controller --> DocentesView: RedirectResponse(status: 'success')
+deactivate Controller
+
+DocentesView --> Administrador: mostrarMensajeExito()
+deactivate DocentesView
+
+@enduml

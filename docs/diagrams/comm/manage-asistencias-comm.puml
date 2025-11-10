@@ -1,0 +1,16 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Asistencias
+actor User
+participant "AsistenciaController" as AC
+participant "Horario Model" as HDB
+participant "Asistencia Model / DB" as ADB
+participant "AuditLog" as Audit
+
+User -> AC: POST /horarios/{horario}/asistencias (form)
+AC -> HDB: validate horario and window
+HDB --> AC: ok
+AC -> ADB: create asistencia
+ADB --> AC: asistencia
+AC -> Audit: create log
+AC --> User: redirect /horarios/{horario}/asistencias
+@enduml

@@ -1,0 +1,11 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Aulas
+actor Admin
+participant "AulaController" as AC
+participant "Aula Model / DB" as ADB
+
+Admin -> AC: POST /aulas (form)
+AC -> ADB: create aula
+ADB --> AC: aula
+AC --> Admin: redirect aulas.index
+@enduml

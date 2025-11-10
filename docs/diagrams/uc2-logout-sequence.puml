@@ -1,0 +1,50 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Usuario
+participant "navigation.blade.php" as NavigationView <<Boundary>>
+participant "AuthenticatedSessionController" as Controller <<Control>>
+participant "User" as UserModel <<Entity>>
+
+Usuario -> NavigationView: clickLogoutButton()
+activate NavigationView
+
+NavigationView -> NavigationView: mostrarBotonSalir()
+
+Usuario -> NavigationView: submitLogout()
+
+NavigationView -> Controller: POST route('logout')
+activate Controller
+
+Controller -> Controller: destroy(Request)
+
+Controller -> Controller: Auth::guard('web')->logout()
+
+Controller -> UserModel: limpiarAutenticacion()
+activate UserModel
+
+UserModel -> UserModel: clearAuthUser()
+
+UserModel -> UserModel: destroySessionId()
+
+UserModel -> UserModel: clearRememberToken()
+
+UserModel --> Controller: sesionCerrada
+deactivate UserModel
+
+Controller -> Controller: request->session()->invalidate()
+
+Controller -> Controller: request->session()->regenerateToken()
+
+Controller -> Controller: redirect('/')
+
+Controller --> NavigationView: RedirectResponse('/')
+deactivate Controller
+
+NavigationView --> Usuario: redireccionarPaginaPrincipal()
+deactivate NavigationView
+
+@enduml

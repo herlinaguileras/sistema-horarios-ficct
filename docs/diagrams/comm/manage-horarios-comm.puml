@@ -1,0 +1,22 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Horarios
+actor Admin
+participant "HorarioController" as HC
+participant "Horario Model / DB" as HDB
+participant "Grupo Model" as GDB
+participant "Aula Model" as ADB
+participant "Docente Model" as DDB
+
+Admin -> HC: POST /grupos/{grupo}/horarios (dia,aula,inicio,fin)
+HC -> HDB: query conflicts aula
+HDB --> HC: exists/none
+HC -> HDB: query conflicts docente
+HDB --> HC: exists/none
+alt no conflicts
+  HC -> HDB: create horario
+  HDB --> HC: horario
+  HC --> Admin: redirect grupos.horarios.index
+else conflicts
+  HC --> Admin: back() withErrors
+end
+@enduml

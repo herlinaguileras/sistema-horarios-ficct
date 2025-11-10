@@ -1,0 +1,13 @@
+@startuml
+actor Admin
+participant "DocenteController" as C
+participant "DB" as DB
+
+Admin -> C: POST /docentes (form data)
+C -> DB: CREATE user
+DB --> C: user id
+C -> DB: CREATE docente (user_id)
+C -> DB: CREATE titulo
+C -> DB: ATTACH role 'docente'
+C --> Admin: redirect /docentes
+@enduml

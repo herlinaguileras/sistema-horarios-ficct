@@ -25,6 +25,25 @@
                         </a>
                     </div>
 
+                    {{-- Barra de búsqueda en tiempo real --}}
+                    <div class="mb-6">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input type="text" 
+                                   id="searchInput" 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                   placeholder="Buscar por nombre, piso, tipo o capacidad..."
+                                   autocomplete="off">
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">
+                            <span id="resultCount">{{ $aulas->count() }}</span> aula(s) encontrada(s)
+                        </p>
+                    </div>
+
                     {{-- Tabla de Aulas --}}
                     @if($aulas->isEmpty())
                         <p>No hay aulas registradas todavía.</p>
@@ -39,9 +58,13 @@
                                     <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white divide-y divide-gray-200" id="aulaTableBody">
                                 @foreach ($aulas as $aula)
-                                    <tr>
+                                    <tr class="aula-row"
+                                        data-nombre="{{ strtolower($aula->nombre) }}"
+                                        data-piso="{{ strtolower($aula->piso) }}"
+                                        data-tipo="{{ strtolower($aula->tipo) }}"
+                                        data-capacidad="{{ $aula->capacidad }}">
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $aula->nombre }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $aula->piso }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $aula->tipo }}</td>
@@ -64,6 +87,11 @@
                                         </td>
                                     </tr>
                                 @endforeach
+                                <tr id="noResults" class="hidden">
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                        No se encontraron aulas que coincidan con la búsqueda.
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     @endif
@@ -72,4 +100,65 @@
             </div>
         </div>
     </div>
+
+    {{-- Script de búsqueda en tiempo real --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const aulaRows = document.querySelectorAll('.aula-row');
+            const noResults = document.getElementById('noResults');
+            const resultCount = document.getElementById('resultCount');
+            const totalAulas = {{ $aulas->count() }};
+
+            if (searchInput && aulaRows.length > 0) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    let visibleCount = 0;
+
+                    if (searchTerm === '') {
+                        aulaRows.forEach(row => {
+                            row.style.display = '';
+                        });
+                        noResults.classList.add('hidden');
+                        resultCount.textContent = totalAulas;
+                    } else {
+                        aulaRows.forEach(row => {
+                            const nombre = row.getAttribute('data-nombre');
+                            const piso = row.getAttribute('data-piso');
+                            const tipo = row.getAttribute('data-tipo');
+                            const capacidad = row.getAttribute('data-capacidad');
+
+                            const matches = nombre.includes(searchTerm) || 
+                                          piso.includes(searchTerm) || 
+                                          tipo.includes(searchTerm) ||
+                                          capacidad.includes(searchTerm);
+
+                            if (matches) {
+                                row.style.display = '';
+                                visibleCount++;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+
+                        if (visibleCount === 0) {
+                            noResults.classList.remove('hidden');
+                        } else {
+                            noResults.classList.add('hidden');
+                        }
+
+                        resultCount.textContent = visibleCount;
+                    }
+                });
+
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        this.value = '';
+                        this.dispatchEvent(new Event('input'));
+                        this.blur();
+                    }
+                });
+            }
+        });
+    </script>
 </x-app-layout>

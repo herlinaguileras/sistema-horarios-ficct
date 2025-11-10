@@ -1,0 +1,117 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-005: Gestión de Docentes
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "index.blade.php" as DocentesView <<Boundary>> {
+  - lista_docentes: tabla HTML
+  - boton_nuevo: link
+  - boton_editar: link
+  --
+  + mostrarListaDocentes(): HTML
+  + navegarCrear(): GET
+  + navegarEditar(id): GET
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class DocenteController <<Control>> {
+  --
+  + index(): View
+  + create(): View
+  + store(request: Request): RedirectResponse
+  + edit(docente: Docente): View
+  + update(request: Request, docente: Docente): RedirectResponse
+  + destroy(docente: Docente): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class Docente <<Entity>> {
+  - id: bigint
+  - user_id: bigint
+  - codigo_docente: string
+  - carnet_identidad: string
+  - telefono: string
+  - facultad: string
+  - estado: string
+  - fecha_contratacion: date
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + user(): User
+  + titulos(): Collection<Titulo>
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+DocentesView ..> DocenteController : <<request>> route('docentes.index')
+DocenteController --> Docente : <<CRUD>>
+DocenteController ..> DocentesView : <<render>> view('docentes.index')
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of DocentesView
+  **Vista Lista de Docentes**
+  - Tabla con docentes y sus datos
+  - Columnas: Nombre, Email, Código, Estado
+  - Botón "Registrar Nuevo Docente"
+  - Link "Editar" por cada docente
+  - Eager loading: with('user')
+  - Ruta: resources/views/docentes/index.blade.php
+end note
+
+note left of DocenteController
+  **Controlador de Gestión de Docentes**
+
+  index():
+    - Obtiene todos los docentes con usuarios
+    - Docente::with('user')->get()
+    - Retorna vista index
+
+  store(Request):
+    1. Valida datos (name, email, código, CI)
+    2. DB::transaction()
+    3. Crea User con password hasheado
+    4. Crea Docente asociado
+    5. Crea primer Título
+    6. Asigna rol 'docente'
+    7. Redirige a docentes.index
+
+  update(Request, Docente):
+    1. Valida con Rule::unique()->ignore()
+    2. Actualiza User (name, email)
+    3. Si password filled: hashea y actualiza
+    4. Actualiza Docente (código, CI, teléfono)
+    5. updateOrCreate() para título
+end note
+
+note bottom of Docente
+  **Entidad Docente**
+  - Modelo Eloquent
+  - Tabla: docentes
+  - Relación belongsTo con User
+  - Relación hasMany con Titulo
+  - Fillable: user_id, codigo_docente, CI, etc.
+  - Estado por defecto: 'activo'
+  - Facultad: FICCT
+end note
+
+@enduml

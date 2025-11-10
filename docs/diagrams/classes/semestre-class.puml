@@ -1,0 +1,10 @@
+@startuml
+class Semestre {
+  +id: int
+  +nombre: string
+  +estado: string
+}
+
+note "Modelo Semestre (relación grupos, atributos asumidos: nombre, estado)" as N
+N .. Semestre
+@enduml

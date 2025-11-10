@@ -1,0 +1,11 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Materias
+actor Admin
+participant "MateriaController" as MC
+participant "Materia Model / DB" as MDB
+
+Admin -> MC: POST /materias (form)
+MC -> MDB: create materia
+MDB --> MC: materia
+MC --> Admin: redirect materias.index
+@enduml

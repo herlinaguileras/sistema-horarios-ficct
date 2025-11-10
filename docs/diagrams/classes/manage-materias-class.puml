@@ -1,0 +1,12 @@
+@startuml
+class Materia {
+  +id: int
+  +nombre: string
+  +sigla: string
+  +nivel_semestre: int
+  +carrera: string
+}
+
+note "Entidad Materia y atributos (desde `app/Models/Materia.php`)" as N
+N .. Materia
+@enduml

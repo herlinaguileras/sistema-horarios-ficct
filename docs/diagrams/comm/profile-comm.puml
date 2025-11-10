@@ -1,0 +1,16 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Perfil
+actor User
+participant "ProfileController" as PC
+participant "User Model / DB" as DB
+
+User -> PC: GET /profile (edit)
+PC -> DB: load user
+DB --> PC: user data
+PC --> User: render form
+
+User -> PC: PATCH /profile (form)
+PC -> DB: update user
+DB --> PC: success
+PC --> User: redirect /profile (status)
+@enduml

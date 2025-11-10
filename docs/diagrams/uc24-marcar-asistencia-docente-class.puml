@@ -1,0 +1,196 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-024: Marcar Asistencia del Docente
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "dashboard-docente.blade.php" as DashboardDocenteView <<Boundary>> {
+  - horario_semanal: tabla HTML
+  - boton_marcar: form (POST)
+  - boton_mostrar_qr: link
+  - boton_ver_asistencias: link
+  --
+  + mostrarHorarioSemanal(docente): HTML
+  + marcarAsistencia(horario): POST
+  + navegarQR(horario): GET
+}
+
+class "qr.blade.php" as QRView <<Boundary>> {
+  - codigo_qr: SVG
+  - informacion_horario: HTML
+  --
+  + mostrarCodigoQR(horario): HTML
+  + generarQR(url): SVG
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class AsistenciaController <<Control>> {
+  --
+  + marcarAsistencia(request: Request, horario: Horario): RedirectResponse
+  + marcarAsistenciaQr(request: Request, horario: Horario): RedirectResponse
+}
+
+class HorarioController <<Control>> {
+  --
+  + showQrCode(horario: Horario): View
+}
+
+class DashboardController <<Control>> {
+  --
+  + index(): View
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class Asistencia <<Entity>> {
+  - id: bigint
+  - horario_id: bigint
+  - docente_id: bigint
+  - fecha: date
+  - hora_registro: time
+  - estado: string
+  - metodo_registro: string
+  - justificacion: text
+  --
+  + horario(): Horario
+  + docente(): Docente
+}
+
+class Horario <<Entity>> {
+  - id: bigint
+  - grupo_id: bigint
+  - aula_id: bigint
+  - dia_semana: integer (1-7)
+  - hora_inicio: time
+  - hora_fin: time
+  --
+  + grupo(): Grupo
+  + aula(): Aula
+  + asistencias(): Collection<Asistencia>
+}
+
+class Docente <<Entity>> {
+  - id: bigint
+  - user_id: bigint
+  - codigo_docente: string
+  - carnet_identidad: string
+  - telefono: string
+  --
+  + user(): User
+  + grupos(): Collection<Grupo>
+  + asistencias(): Collection<Asistencia>
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+DashboardDocenteView ..> AsistenciaController : <<submit>> route('asistencias.marcar')
+DashboardDocenteView ..> HorarioController : <<request>> route('horarios.qr')
+QRView ..> AsistenciaController : <<QR scan>> route('asistencias.marcar.qr')
+AsistenciaController --> Asistencia : <<create>>
+AsistenciaController ..> DashboardDocenteView : <<redirect>> route('dashboard')
+HorarioController ..> QRView : <<render>> view('horarios.qr')
+
+Asistencia "*" --> "1" Horario : registrada en
+Asistencia "*" --> "1" Docente : marcada por
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of DashboardDocenteView
+  **Vista Panel del Docente**
+  - Muestra horario semanal del docente
+  - Agrupado por días (Lunes-Domingo)
+  - Columnas: Hora, Materia, Grupo, Aula, Acciones
+  - Botón "Marcar Asistencia" (solo si es HOY)
+  - Link "Mostrar QR" (nueva pestaña)
+  - Link "Ver Asistencias"
+  - Validación: now()->dayOfWeekIso == horario->dia_semana
+  - Muestra mensajes de éxito y error
+  - Eager loading: grupo.materia, aula, grupo.docente.user
+  - Ruta: resources/views/dashboard-docente.blade.php
+end note
+
+note right of QRView
+  **Vista Código QR para Asistencia**
+  - Genera código QR de 250x250px
+  - Contenido: route('asistencias.marcar.qr', horario)
+  - Muestra detalles del horario:
+    · Materia, Grupo, Día, Hora, Aula, Docente
+  - Usa SimpleSoftwareIO\QrCode
+  - Botón "Volver al Dashboard"
+  - Diseño centrado y responsive
+  - Ruta: resources/views/horarios/qr.blade.php
+end note
+
+note left of AsistenciaController
+  **Controlador de Marcado de Asistencia**
+
+  marcarAsistencia(Request, Horario):
+    1. Obtiene fecha y hora actuales (Carbon::now())
+    2. Verifica autorización:
+       - Auth::user()->docente
+       - horario->grupo->docente_id == docente->id
+       - Abort 403 si no coincide
+    3. VALIDA VENTANA DE TIEMPO:
+       - Margen ±15 min desde hora_inicio
+       - Si fuera: withErrors y redirect dashboard
+    4. VALIDA NO DUPLICADO:
+       - Busca asistencia hoy para este horario
+       - Si existe: withErrors y redirect
+    5. CREA ASISTENCIA:
+       - fecha: hoy
+       - hora_registro: hora actual
+       - estado: 'Presente'
+       - metodo_registro: 'Boton'
+    6. Redirige a dashboard con status
+
+  marcarAsistenciaQr(Request, Horario):
+    - Misma lógica que marcarAsistencia
+    - metodo_registro: 'QR'
+    - Llamado al escanear código QR
+    - Método POST
+end note
+
+note left of HorarioController
+  **Controlador de Horarios (QR)**
+
+  showQrCode(Horario):
+    - Carga relaciones del horario:
+      · grupo.materia
+      · aula
+      · grupo.docente.user
+    - Retorna vista 'horarios.qr'
+    - Pasa objeto horario a la vista
+    - Vista genera QR con SimpleSoftwareIO
+end note
+
+note bottom of Asistencia
+  **Entidad Asistencia (Docente)**
+  - Método de marcado: 'Boton' o 'QR'
+  - Estado automático: 'Presente'
+  - Validaciones:
+    · Ventana de tiempo ±15 minutos
+    · Solo un registro por día por horario
+    · Solo el docente asignado puede marcar
+  - justificacion: null (no aplica para auto-marcado)
+  - Registro automático de fecha y hora actual
+  - No permite edición posterior
+end note
+
+@enduml

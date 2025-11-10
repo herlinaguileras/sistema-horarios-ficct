@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Materia;
+use App\Models\Carrera;
 use Illuminate\Validation\Rule;
 
 class MateriaController extends Controller
@@ -11,15 +12,14 @@ class MateriaController extends Controller
     /**
      * Display a listing of the resource.
      */
-   /**
+/**
  * Display a listing of the resource.
  */
 public function index()
 {
-    // 1. Obtenemos todas las materias
-    $materias = Materia::all();
+    // Obtener todas las materias con sus carreras
+    $materias = Materia::with('carreras')->get();
 
-    // 2. Devolvemos una vista y le pasamos las materias
     return view('materias.index', ['materias' => $materias]);
 }
 
@@ -29,8 +29,10 @@ public function index()
 
 public function create()
 {
-    // Simplemente devolvemos la vista que contendrá el formulario
-    return view('materias.create');
+    // Obtener todas las carreras activas
+    $carreras = Carrera::where('activa', true)->get();
+    
+    return view('materias.create', compact('carreras'));
 }
 
     /**
@@ -39,22 +41,25 @@ public function create()
 public function store(Request $request)
 {
     // 1. VALIDAMOS LOS DATOS
-    // (nombre, codigo_materia, nivel_semestre, carrera)
-   // ...
-$validatedData = $request->validate([
-    'nombre' => ['required', 'string', 'max:255'],
-    'sigla' => ['required', 'string', 'max:255', 'unique:materias'], // <-- CAMBIO AQUÍ
-    'nivel_semestre' => ['required', 'integer', 'min:1'],
-    'carrera' => ['required', 'string'],
-]);
-// ...
+    $validatedData = $request->validate([
+        'nombre' => ['required', 'string', 'max:255'],
+        'sigla' => ['required', 'string', 'max:255', 'unique:materias'],
+        'nivel_semestre' => ['required', 'integer', 'min:1'],
+        'carreras' => ['required', 'array', 'min:1'],
+        'carreras.*' => ['required', 'integer', 'exists:carreras,id'],
+    ]);
 
     // 2. CREAMOS LA MATERIA
-    // Gracias al $fillable, podemos hacer esto de forma segura
-    Materia::create($validatedData);
+    $materia = Materia::create([
+        'nombre' => $validatedData['nombre'],
+        'sigla' => $validatedData['sigla'],
+        'nivel_semestre' => $validatedData['nivel_semestre'],
+    ]);
 
-    // 3. REDIRIGIMOS A LA LISTA
-    // Volvemos a la lista de materias con un mensaje de éxito
+    // 3. ASOCIAMOS LAS CARRERAS
+    $materia->carreras()->attach($validatedData['carreras']);
+
+    // 4. REDIRIGIMOS A LA LISTA
     return redirect()->route('materias.index')->with('status', '¡Materia creada exitosamente!');
 }
     /**
@@ -68,18 +73,18 @@ $validatedData = $request->validate([
     /**
      * Show the form for editing the specified resource.
      */
-   /**
 /**
  * Muestra el formulario para editar la materia especificada.
  */
 public function edit(Materia $materia)
 {
-    // Laravel automáticamente encontrará la materia usando el ID de la URL
-
-    // Devolvemos la vista 'edit' y le pasamos la materia
-    return view('materias.edit', ['materia' => $materia]);
+    // Cargar las carreras de la materia y todas las carreras disponibles
+    $materia->load('carreras');
+    $carreras = Carrera::where('activa', true)->get();
+    
+    return view('materias.edit', compact('materia', 'carreras'));
 }
-/**
+    /**
      * Actualiza la materia especificada en la base de datos.
      */
     public function update(Request $request, Materia $materia)
@@ -87,28 +92,30 @@ public function edit(Materia $materia)
         // 1. VALIDAMOS LOS DATOS
         $validatedData = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
-
-            // Regla 'unique' especial: Le decimos que ignore la sigla
-            // de la materia que estamos editando actualmente.
             'sigla' => [
                 'required',
                 'string',
                 'max:255',
                 Rule::unique('materias')->ignore($materia->id)
             ],
-
             'nivel_semestre' => ['required', 'integer', 'min:1'],
-            'carrera' => ['required', 'string'],
+            'carreras' => ['required', 'array', 'min:1'],
+            'carreras.*' => ['required', 'integer', 'exists:carreras,id'],
         ]);
 
         // 2. ACTUALIZAMOS LA MATERIA
-        $materia->update($validatedData);
+        $materia->update([
+            'nombre' => $validatedData['nombre'],
+            'sigla' => $validatedData['sigla'],
+            'nivel_semestre' => $validatedData['nivel_semestre'],
+        ]);
 
-        // 3. REDIRIGIMOS A LA LISTA
+        // 3. SINCRONIZAMOS LAS CARRERAS (elimina las antiguas y agrega las nuevas)
+        $materia->carreras()->sync($validatedData['carreras']);
+
+        // 4. REDIRIGIMOS A LA LISTA
         return redirect()->route('materias.index')->with('status', '¡Materia actualizada exitosamente!');
-    }
-
-    /**
+    }    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)

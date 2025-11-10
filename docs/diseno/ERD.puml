@@ -1,0 +1,14 @@
+@startuml
+entity "users" as users {
+  *id : int
+  --
+  name : varchar
+  email : varchar
+}
+entity "docentes" as docentes {
+  *id : int
+  user_id : int
+  codigo_docente : varchar
+}
+users ||--o{ docentes : has
+@enduml

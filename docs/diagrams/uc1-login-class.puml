@@ -1,0 +1,103 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-001: Iniciar Sesión
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "login.blade.php" as LoginView <<Boundary>> {
+  - email: input
+  - password: input
+  - remember: checkbox
+  --
+  + mostrarFormulario(): HTML
+  + enviarDatos(): POST
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class AuthenticatedSessionController <<Control>> {
+  --
+  + create(): View
+  + store(request: LoginRequest): RedirectResponse
+  + destroy(request: Request): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class User <<Entity>> {
+  - id: bigint
+  - name: string
+  - email: string
+  - email_verified_at: timestamp
+  - password: string (hashed)
+  - remember_token: string
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + docente(): Docente
+  + roles(): Collection<Role>
+  + hasRole(roleName: string): boolean
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+LoginView ..> AuthenticatedSessionController : <<submit>> route('login')
+AuthenticatedSessionController --> User : <<authenticate>>
+AuthenticatedSessionController ..> LoginView : <<render>> create()
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of LoginView
+  **Vista Blade**
+  - Renderiza formulario con campos:
+    · email (required, autofocus)
+    · password (required)
+    · remember (checkbox)
+  - CSRF token incluido
+  - Submit POST a route('login')
+end note
+
+note left of AuthenticatedSessionController
+  **Controlador de Autenticación**
+
+  create():
+    - Retorna vista 'auth.login'
+
+  store(LoginRequest):
+    - Llama a request.authenticate()
+    - Regenera sesión
+    - Redirecciona a dashboard
+
+  destroy(Request):
+    - Cierra sesión Auth::logout()
+    - Invalida sesión
+    - Regenera token CSRF
+end note
+
+note bottom of User
+  **Entidad Usuario**
+  - Modelo Eloquent (Authenticatable)
+  - Tabla: users
+  - Password hasheado automáticamente
+  - Relaciones:
+    · hasOne: Docente
+    · belongsToMany: Role
+end note
+
+@enduml

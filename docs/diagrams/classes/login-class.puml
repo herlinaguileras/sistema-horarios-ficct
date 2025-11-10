@@ -1,0 +1,14 @@
+@startuml
+class User {
+  +id: int
+  +name: string
+  +email: string
+  +password: string
+  +email_verified_at: datetime
+  +remember_token: string
+  +hasRole(role): bool
+}
+
+note "Clase central para autenticación; atributos extraídos de `app/Models/User.php`" as N
+N .. User
+@enduml

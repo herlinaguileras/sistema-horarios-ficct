@@ -1,0 +1,27 @@
+@startuml
+' ============================================================================
+' Diagrama de Comunicación - UC-001: Iniciar Sesión
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+left to right direction
+skinparam shadowing false
+
+actor Usuario
+
+object "LoginView" as LoginView
+object "AuthenticatedSession\nController" as Controller
+object "User" as UserModel
+
+Usuario -> LoginView : 1: ingresarCredenciales()
+Usuario -> LoginView : 2: submitForm(email, password)
+LoginView -> Controller : 3: login
+Controller -> Controller : 3.1: validate()
+Controller -> Controller : 3.2: validate()
+Controller -> UserModel : 3.3: verificarCredenciales(email, password)
+UserModel -> Controller : 3.4: credencialesValidas
+Controller -> LoginView : 3.5: RedirectResponse('/dashboard')
+LoginView -> Usuario : 4: redireccionarDashboard()
+
+@enduml

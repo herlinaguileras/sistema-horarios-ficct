@@ -1,0 +1,66 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Administrador
+participant "index.blade.php" as MateriasView <<Boundary>>
+participant "MateriaController" as Controller <<Control>>
+participant "Materia" as MateriaModel <<Entity>>
+
+Administrador -> MateriasView: accederGestionMaterias()
+activate MateriasView
+
+MateriasView -> Controller: GET route('materias.index')
+activate Controller
+
+Controller -> Controller: index()
+
+Controller -> MateriaModel: all()
+activate MateriaModel
+
+MateriaModel --> Controller: listaMaterias
+deactivate MateriaModel
+
+Controller --> MateriasView: view('materias.index', materias)
+deactivate Controller
+
+MateriasView --> Administrador: mostrarListaMaterias()
+
+Administrador -> MateriasView: clickRegistrarNueva()
+
+MateriasView -> Controller: GET route('materias.create')
+activate Controller
+
+Controller -> Controller: create()
+
+Controller --> MateriasView: view('materias.create')
+deactivate Controller
+
+MateriasView --> Administrador: mostrarFormulario()
+
+Administrador -> MateriasView: submitForm(nombre, sigla, nivel, carrera)
+
+MateriasView -> Controller: POST route('materias.store')
+activate Controller
+
+Controller -> Controller: store(Request)
+
+Controller -> Controller: validarDatos(sigla única, nivel min:1)
+
+Controller -> MateriaModel: create(validatedData)
+activate MateriaModel
+
+MateriaModel --> Controller: materiaCreada
+deactivate MateriaModel
+
+Controller -> Controller: redirect()->route('materias.index')
+
+Controller --> MateriasView: RedirectResponse(status: '¡Materia creada exitosamente!')
+deactivate Controller
+
+MateriasView --> Administrador: mostrarMensajeExito()
+deactivate MateriasView
+
+@enduml

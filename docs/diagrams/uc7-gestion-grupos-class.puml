@@ -1,0 +1,171 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-007: Gestión de Grupos
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "index.blade.php" as  GruposView<<Boundary>> {
+  - lista_grupos: tabla HTML
+  - boton_asignar: link
+  - boton_horario: link
+  - boton_eliminar: form
+  --
+  + mostrarListaGrupos(): HTML
+  + navegarCrear(): GET
+  + navegarHorario(id): GET
+  + eliminarGrupo(id): DELETE
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class GrupoController <<Control>> {
+  --
+  + index(): View
+  + create(): View
+  + store(request: Request): RedirectResponse
+  + edit(grupo: Grupo): View
+  + update(request: Request, grupo: Grupo): RedirectResponse
+  + destroy(grupo: Grupo): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class Grupo <<Entity>> {
+  - id: bigint
+  - semestre_id: bigint
+  - materia_id: bigint
+  - docente_id: bigint
+  - nombre: string
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + semestre(): Semestre
+  + materia(): Materia
+  + docente(): Docente
+  + horarios(): Collection<Horario>
+}
+
+class Semestre <<Entity>> {
+  - id: bigint
+  - nombre: string
+  - gestion: string
+  - fecha_inicio: date
+  - fecha_fin: date
+  --
+  + grupos(): Collection<Grupo>
+}
+
+class Materia <<Entity>> {
+  - id: bigint
+  - nombre: string
+  - sigla: string
+  - nivel_semestre: integer
+  - carrera: string
+  --
+  + grupos(): Collection<Grupo>
+}
+
+class Docente <<Entity>> {
+  - id: bigint
+  - user_id: bigint
+  - codigo_docente: string
+  - carnet_identidad: string
+  - telefono: string
+  --
+  + user(): User
+  + grupos(): Collection<Grupo>
+}
+
+class Horario <<Entity>> {
+  - id: bigint
+  - grupo_id: bigint
+  - aula_id: bigint
+  - dia_semana: string
+  - hora_inicio: time
+  - hora_fin: time
+  --
+  + grupo(): Grupo
+  + aula(): Aula
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+GruposView ..> GrupoController : <<request>> route('grupos.index')
+GrupoController --> Grupo : <<CRUD>>
+GrupoController ..> GruposView : <<render>> view('grupos.index')
+
+Grupo "*" --> "1" Semestre : pertenece a
+Grupo "*" --> "1" Materia : pertenece a
+Grupo "*" --> "1" Docente : asignado a
+Grupo "1" --> "*" Horario : tiene
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of GruposView
+  **Vista Lista de Grupos (Carga Horaria)**
+  - Tabla con grupos asignados
+  - Columnas: Semestre, Materia, Grupo, Docente
+  - Botón "Asignar Carga Horaria (Grupo)"
+  - Link "Horario" para ver/editar horario
+  - Botón "Eliminar" con confirmación
+  - Eager loading: semestre, materia, docente.user
+  - Ruta: resources/views/grupos/index.blade.php
+end note
+
+note left of GrupoController
+  **Controlador de Gestión de Grupos**
+
+  index():
+    - Optimiza con eager loading
+    - Grupo::with(['semestre', 'materia', 'docente.user'])
+    - Retorna vista index
+
+  create():
+    - Carga Semestre::all(), Materia::all()
+    - Carga Docente::with('user')->get()
+    - Para menús desplegables
+
+  store(Request):
+    1. Valida IDs (exists en sus tablas)
+    2. Valida nombre (max 10 chars, ej: "SA")
+    3. Grupo::create($validatedData)
+    4. Redirige con mensaje de éxito
+
+  update(Request, Grupo):
+    1. Valida semestre_id, materia_id, docente_id
+    2. $grupo->update($validatedData)
+    3. Redirige a grupos.index
+
+  destroy(Grupo):
+    - $grupo->delete()
+    - Elimina carga horaria asignada
+end note
+
+note bottom of Grupo
+  **Entidad Grupo (Carga Horaria)**
+  - Modelo Eloquent
+  - Tabla: grupos
+  - Relaciones belongsTo: Semestre, Materia, Docente
+  - Relación hasMany: Horario (clases semanales)
+  - Fillable: semestre_id, materia_id, docente_id, nombre
+  - Nombre: identificador del grupo (SA, SB, SC, etc.)
+  - Representa asignación docente-materia-semestre
+end note
+
+@enduml

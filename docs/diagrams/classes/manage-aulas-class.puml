@@ -1,0 +1,12 @@
+@startuml
+class Aula {
+  +id: int
+  +nombre: string
+  +piso: int
+  +tipo: string
+  +capacidad: int
+}
+
+note "Entidad Aula y atributos (desde `app/Models/Aula.php`)" as N
+N .. Aula
+@enduml

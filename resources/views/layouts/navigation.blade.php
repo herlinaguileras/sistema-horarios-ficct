@@ -19,6 +19,18 @@
                 @if(Auth::user() && Auth::user()->hasRole('admin'))
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                            {{ __('Usuarios') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.*')">
+                            {{ __('Roles') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link :href="route('docentes.index')" :active="request()->routeIs('docentes.*')">
                             {{ __('Docentes') }}
                         </x-nav-link>
@@ -37,8 +49,26 @@
                     </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                        <x-nav-link :href="route('grupos.index')" :active="request()->routeIs('grupos.*', 'grupos.horarios.*', 'horarios.asistencias.*')"> {{-- Adjusted active state to include nested routes --}}
+                        <x-nav-link :href="route('grupos.index')" :active="request()->routeIs('grupos.*')">
                             {{ __('Grupos') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('semestres.index')" :active="request()->routeIs('semestres.*')">
+                            {{ __('Semestres') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('horarios.index')" :active="request()->routeIs('horarios.*', 'horarios.asistencias.*')">
+                            {{ __('Horarios') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
+                            {{ __('Estadísticas') }}
                         </x-nav-link>
                     </div>
 
@@ -99,6 +129,12 @@
 
              {{-- === START RESPONSIVE ADMIN LINKS === --}}
             @if(Auth::user() && Auth::user()->hasRole('admin'))
+                <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                    {{ __('Usuarios') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.*')">
+                    {{ __('Roles') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('docentes.index')" :active="request()->routeIs('docentes.*')">
                     {{ __('Docentes') }}
                 </x-responsive-nav-link>
@@ -108,8 +144,17 @@
                 <x-responsive-nav-link :href="route('aulas.index')" :active="request()->routeIs('aulas.*')">
                     {{ __('Aulas') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('grupos.index')" :active="request()->routeIs('grupos.*', 'grupos.horarios.*', 'horarios.asistencias.*')">
+                <x-responsive-nav-link :href="route('grupos.index')" :active="request()->routeIs('grupos.*')">
                     {{ __('Grupos') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('semestres.index')" :active="request()->routeIs('semestres.*')">
+                    {{ __('Semestres') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('horarios.index')" :active="request()->routeIs('horarios.*', 'horarios.asistencias.*')">
+                    {{ __('Horarios') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
+                    {{ __('Estadísticas') }}
                 </x-responsive-nav-link>
             @endif
              {{-- === END RESPONSIVE ADMIN LINKS === --}}

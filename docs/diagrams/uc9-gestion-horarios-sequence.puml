@@ -1,0 +1,84 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Administrador
+participant "index.blade.php" as HorariosView <<Boundary>>
+participant "HorarioController" as Controller <<Control>>
+participant "Horario" as HorarioModel <<Entity>>
+participant "Grupo" as GrupoModel <<Entity>>
+participant "Aula" as AulaModel <<Entity>>
+
+Administrador -> HorariosView: accederGestionHorarios(grupo)
+activate HorariosView
+
+HorariosView -> Controller: GET route('grupos.horarios.index', grupo)
+activate Controller
+
+Controller -> Controller: index(Grupo)
+
+Controller -> GrupoModel: horarios()->with('aula')->get()
+activate GrupoModel
+
+GrupoModel --> Controller: listaHorarios
+deactivate GrupoModel
+
+Controller --> HorariosView: view('horarios.index', grupo, horarios)
+deactivate Controller
+
+HorariosView --> Administrador: mostrarHorariosDelGrupo()
+
+Administrador -> HorariosView: clickAñadirHorario()
+
+HorariosView -> Controller: GET route('grupos.horarios.create', grupo)
+activate Controller
+
+Controller -> Controller: create(Grupo)
+
+Controller -> AulaModel: all()
+activate AulaModel
+AulaModel --> Controller: listaAulas
+deactivate AulaModel
+
+Controller --> HorariosView: view('horarios.create', grupo, aulas)
+deactivate Controller
+
+HorariosView --> Administrador: mostrarFormulario()
+
+Administrador -> HorariosView: submitForm(dia, hora_inicio, hora_fin, aula_id)
+
+HorariosView -> Controller: POST route('grupos.horarios.store', grupo)
+activate Controller
+
+Controller -> Controller: store(Request, Grupo)
+
+Controller -> Controller: validarDatos(dia 1-7, hora_fin after hora_inicio)
+
+Controller -> Controller: validarConflictoAula()
+
+Controller -> Controller: validarConflictoDocente()
+
+Controller -> Controller: validarConflictoGrupo()
+
+alt sin conflictos
+    Controller -> HorarioModel: create(validatedData)
+    activate HorarioModel
+
+    HorarioModel --> Controller: horarioCreado
+    deactivate HorarioModel
+
+    Controller -> Controller: redirect()->route('grupos.horarios.index', grupo)
+
+    Controller --> HorariosView: RedirectResponse(status: '¡Horario añadido!')
+else hay conflicto
+    Controller --> HorariosView: back()->withErrors()
+end
+
+deactivate Controller
+
+HorariosView --> Administrador: mostrarResultado()
+deactivate HorariosView
+
+@enduml

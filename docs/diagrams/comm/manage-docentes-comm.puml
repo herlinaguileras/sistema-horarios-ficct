@@ -1,0 +1,17 @@
+@startuml
+title Diagrama de Comunicación - Gestión de Docentes
+actor Admin
+participant "DocenteController" as DC
+participant "User Model / DB" as UserDB
+participant "Docente Model / DB" as DocDB
+participant "Role Model / DB" as RoleDB
+
+Admin -> DC: POST /docentes (form)
+DC -> UserDB: create user
+UserDB --> DC: user
+DC -> DocDB: create docente (user_id)
+DC -> DocDB: create titulo
+DC -> RoleDB: find 'docente'
+DC -> RoleDB: attach role to user
+DC --> Admin: redirect /docentes
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+class AuditLog {
+  +id: int
+  +user_id: int
+  +action: string
+  +model_type: string
+  +model_id: int
+  +details: text
+  +ip_address: string
+  +user_agent: string
+  +created_at: datetime
+}
+
+note "AuditLog attributes from `app/Models/AuditLog.php`" as N
+N .. AuditLog
+@enduml

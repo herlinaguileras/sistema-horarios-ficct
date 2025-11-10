@@ -40,7 +40,8 @@
 
                             <div>
                                 <x-input-label for="codigo_docente" :value="__('Código Docente')" />
-                                <x-text-input id="codigo_docente" class="block w-full mt-1" type="text" name="codigo_docente" :value="old('codigo_docente', $docente->codigo_docente)" required />
+                                <x-text-input id="codigo_docente" class="block w-full mt-1 bg-gray-100 cursor-not-allowed" type="text" name="codigo_docente" :value="old('codigo_docente', $docente->codigo_docente)" readonly />
+                                <p class="mt-1 text-xs text-gray-500">El código docente no puede ser modificado</p>
                                 <x-input-error :messages="$errors->get('codigo_docente')" class="mt-2" />
                             </div>
 
@@ -85,7 +86,11 @@
                         </div>
 
 
-                        <div class="flex items-center justify-end mt-6">
+                        <div class="flex items-center justify-end gap-4 mt-6">
+                            <a href="{{ route('docentes.index') }}" 
+                               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Cancelar
+                            </a>
                             <x-primary-button>
                                 {{ __('Actualizar Docente') }}
                             </x-primary-button>

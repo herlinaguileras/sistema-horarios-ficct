@@ -1,0 +1,33 @@
+@startuml
+class Grupo {
+  +id: int
+  +semestre_id: int
+  +materia_id: int
+  +docente_id: int
+  +nombre: string
+}
+
+class Semestre {
+  +id: int
+  +nombre: string
+  +estado: string
+}
+
+class Materia {
+  +id: int
+  +nombre: string
+}
+
+class Docente {
+  +id: int
+  +user_id: int
+  +codigo_docente: string
+}
+
+Grupo "1" -- "1" Semestre
+Grupo "1" -- "1" Materia
+Grupo "1" -- "1" Docente
+
+note "Entidad Grupo y relaciones (atributos basados en modelos)" as N
+N .. Grupo
+@enduml

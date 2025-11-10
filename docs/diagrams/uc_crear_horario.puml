@@ -1,0 +1,10 @@
+@startuml
+left to right direction
+actor Administrador
+actor Coordinador
+rectangle Sistema {
+  usecase "Crear horario" as UC2
+}
+Administrador --> UC2
+Coordinador --> UC2
+@enduml

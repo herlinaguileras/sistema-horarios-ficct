@@ -1,0 +1,14 @@
+@startuml
+actor User
+participant "AuthenticatedSessionController" as C
+participant "AuthService" as S
+database "Postgres" as DB
+
+User -> C: POST /login (email,password)
+C -> S: validateCredentials()
+S -> DB: SELECT * FROM users WHERE email = ?
+DB --> S: user row
+S -> S: verify password
+S --> C: session created
+C --> User: redirect /dashboard
+@enduml

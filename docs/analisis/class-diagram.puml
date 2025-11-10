@@ -1,0 +1,33 @@
+@startuml
+class User {
+  +id: int
+  +name: string
+  +email: string
+  +password: string
+  +hasRole(role): bool
+}
+
+class Docente {
+  +id: int
+  +user_id: int
+  +codigo_docente: string
+  +telefono: string
+}
+
+class Materia
+class Grupo
+class Horario
+class Aula
+class Semestre
+class Titulo
+class Role
+
+User "1" -- "0..1" Docente
+Docente "1" -- "0..*" Titulo
+Grupo "1" -- "1" Materia
+Grupo "1" -- "1" Docente
+Grupo "1" -- "1" Semestre
+Horario "*" -- "1" Grupo
+Horario "*" -- "1" Aula
+User "*" -- "*" Role : roles
+@enduml

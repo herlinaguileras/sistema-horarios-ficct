@@ -1,0 +1,18 @@
+@startuml
+actor Admin
+participant "HorarioController" as HC
+participant "Horario Model / DB" as DB
+
+Admin -> HC: POST /grupos/{grupo}/horarios (dia, aula, inicio, fin)
+HC -> DB: exists conflict aula?
+DB --> HC: true/false
+HC -> DB: exists conflict docente?
+DB --> HC: true/false
+alt no conflicts
+  HC -> DB: CREATE horario
+  DB --> HC: horario
+  HC --> Admin: redirect grupos.horarios.index
+else conflicts
+  HC --> Admin: return back() withErrors
+end
+@enduml

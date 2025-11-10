@@ -1,0 +1,10 @@
+@startuml
+class Role {
+  +id: int
+  +name: string
+  +description: string
+}
+
+note "Role model (atributos desde `app/Models/Role.php`)" as N
+N .. Role
+@enduml

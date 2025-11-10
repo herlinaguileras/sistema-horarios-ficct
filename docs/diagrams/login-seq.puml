@@ -1,0 +1,14 @@
+@startuml
+actor User
+participant "AuthController" as C
+participant "AuthService" as S
+database "Postgres" as DB
+
+User -> C: POST /login
+C -> S: validateCredentials()
+S -> DB: SELECT user WHERE email=...
+DB --> S: user row
+S -> S: verify password & roles
+S --> C: token/session
+C --> User: 302 dashboard
+@enduml

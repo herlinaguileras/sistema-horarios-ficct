@@ -1,0 +1,66 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+actor Administrador
+participant "index.blade.php" as AulasView <<Boundary>>
+participant "AulaController" as Controller <<Control>>
+participant "Aula" as AulaModel <<Entity>>
+
+Administrador -> AulasView: accederGestionAulas()
+activate AulasView
+
+AulasView -> Controller: GET route('aulas.index')
+activate Controller
+
+Controller -> Controller: index()
+
+Controller -> AulaModel: all()
+activate AulaModel
+
+AulaModel --> Controller: listaAulas
+deactivate AulaModel
+
+Controller --> AulasView: view('aulas.index', aulas)
+deactivate Controller
+
+AulasView --> Administrador: mostrarListaAulas()
+
+Administrador -> AulasView: clickRegistrarNueva()
+
+AulasView -> Controller: GET route('aulas.create')
+activate Controller
+
+Controller -> Controller: create()
+
+Controller --> AulasView: view('aulas.create')
+deactivate Controller
+
+AulasView --> Administrador: mostrarFormulario()
+
+Administrador -> AulasView: submitForm(nombre, piso, tipo, capacidad)
+
+AulasView -> Controller: POST route('aulas.store')
+activate Controller
+
+Controller -> Controller: store(Request)
+
+Controller -> Controller: validarDatos(nombre único, capacidad min:1)
+
+Controller -> AulaModel: create(validatedData)
+activate AulaModel
+
+AulaModel --> Controller: aulaCreada
+deactivate AulaModel
+
+Controller -> Controller: redirect()->route('aulas.index')
+
+Controller --> AulasView: RedirectResponse(status: '¡Aula creada exitosamente!')
+deactivate Controller
+
+AulasView --> Administrador: mostrarMensajeExito()
+deactivate AulasView
+
+@enduml

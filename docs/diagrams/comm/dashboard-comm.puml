@@ -1,0 +1,20 @@
+@startuml
+title Diagrama de Comunicación - Dashboard
+actor User
+participant "DashboardController" as DC
+participant "Semestre Model" as Sem
+participant "Horario Model" as Hor
+participant "Asistencia Model" as Asis
+participant "Aula Model" as Aula
+
+User -> DC: GET /dashboard
+DC -> Sem: find active semester
+Sem --> DC: semestre
+DC -> Hor: query horarios (with relations)
+Hor --> DC: horarios
+DC -> Asis: query asistencias
+Asis --> DC: asistencias
+DC -> Aula: optionally query aulas
+Aula --> DC: aulas
+DC --> User: render dashboard view
+@enduml

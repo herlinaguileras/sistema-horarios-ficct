@@ -7,185 +7,311 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\Horario;
 use App\Models\Semestre;
+use Illuminate\Support\Facades\DB;
 
 
 class HorarioController extends Controller
 {
-  /**
- * Muestra la lista de horarios para un grupo específico.
- */
-public function index(Grupo $grupo)
-{
-    // 1. Laravel nos da el $grupo gracias a la ruta.
-
-    // 2. Cargamos los horarios de ESE grupo y sus aulas
-    //    (Usamos 'with' para ser eficientes)
-    $horarios = $grupo->horarios()->with('aula')->get();
-
-    // 3. Devolvemos la vista y le pasamos el grupo y sus horarios
-    return view('horarios.index', [
-        'grupo' => $grupo,
-        'horarios' => $horarios,
-    ]);
-}
-/**
- * Handle the export of the weekly schedule to PDF.
- */
-
-
-   /**
- * Muestra el formulario para crear un nuevo horario para un grupo.
- */
-public function create(Grupo $grupo)
-{
-    // 1. Laravel nos da el $grupo al que pertenece este horario.
-
-    // 2. Obtenemos todas las aulas para el menú desplegable.
-    $aulas = Aula::all();
-
-    // 3. Devolvemos la vista y le pasamos el grupo y las aulas.
-    return view('horarios.create', [
-        'grupo' => $grupo,
-        'aulas' => $aulas,
-    ]);
-}
-
-/**
- * Almacena un nuevo horario en la base de datos, revisando conflictos.
- */
-public function store(Request $request, Grupo $grupo)
-{
-    // 1. VALIDAMOS LOS DATOS BÁSICOS
-    $request->validate([
-        'dia_semana' => ['required', 'integer', 'between:1,7'], // Expects 1-7
-        'aula_id' => ['required', 'exists:aulas,id'],
-        'hora_inicio' => ['required', 'date_format:H:i'],
-        'hora_fin' => ['required', 'date_format:H:i', 'after:hora_inicio'],
-    ]);
-
-    $dia = $request->input('dia_semana');
-    $inicio = $request->input('hora_inicio');
-    $fin = $request->input('hora_fin');
-    $aula_id = $request->input('aula_id');
-    $docente_id = $grupo->docente_id; // Obtenemos el ID del docente de este grupo
-
-    // 2. LÓGICA ANTI-CONFLICTOS
-    // Esta es la consulta clave para detectar un "cruce de horarios"
-    // (HoraInicioNueva < HoraFinExistente) Y (HoraFinNueva > HoraInicioExistente)
-    $funcionSolapamiento = function ($query) use ($inicio, $fin) {
-        $query->where('hora_inicio', '<', $fin)
-              ->where('hora_fin', '>', $inicio);
-    };
-
-    // Conflicto 1: Aula
-    $conflictoAula = Horario::where('dia_semana', $dia)
-        ->where('aula_id', $aula_id)
-        ->where($funcionSolapamiento)
-        ->exists(); // exists() es más rápido, solo devuelve true/false
-
-    if ($conflictoAula) {
-        // Si hay conflicto, volvemos atrás con un mensaje de error
-        return back()->withErrors([
-            'aula_id' => '¡Conflicto de Aula! Esta aula ya está ocupada en ese día y hora.'
-        ])->withInput(); // withInput() mantiene los datos del formulario
-    }
-
-    // Conflicto 2: Docente
-    // Buscamos si el docente ya tiene una clase en otro grupo a esa hora
-    $conflictoDocente = Horario::where('dia_semana', $dia)
-        ->whereHas('grupo', function($query) use ($docente_id) {
-            $query->where('docente_id', $docente_id);
-        })
-        ->where($funcionSolapamiento)
-        ->exists();
-
-    if ($conflictoDocente) {
-        return back()->withErrors([
-            'docente_id' => '¡Conflicto de Docente! El docente ya tiene otra clase asignada en ese día y hora.'
-        ])->withInput();
-    }
-
-    // Conflicto 3: Grupo (Menos común, pero para ser rigurosos)
-    // Revisa si este mismo grupo ya tiene una clase a esa hora
-    $conflictoGrupo = $grupo->horarios()
-        ->where('dia_semana', $dia)
-        ->where($funcionSolapamiento)
-        ->exists();
-
-    if ($conflictoGrupo) {
-         return back()->withErrors([
-            'grupo_id' => '¡Conflicto de Grupo! Este grupo ya tiene una clase asignada en ese día y hora.'
-        ])->withInput();
-    }
-
-    // 3. SI NO HAY CONFLICTOS, GUARDAMOS
-    $grupo->horarios()->create([
-        'aula_id' => $aula_id,
-        'dia_semana' => $dia,
-        'hora_inicio' => $inicio,
-        'hora_fin' => $fin,
-    ]);
-
-    // 4. REDIRIGIMOS A LA LISTA
-    return redirect()
-        ->route('grupos.horarios.index', $grupo)
-        ->with('status', '¡Horario añadido exitosamente!');
-}
-
     /**
-     * Display the specified resource.
+     * Muestra la lista de todos los horarios.
      */
-    public function show(string $id)
+    public function index(Request $request)
     {
-        //
+        $query = Horario::with(['grupo.semestre', 'grupo.materia', 'grupo.docente.user', 'aula']);
+
+        // Aplicar filtros
+        if ($request->filled('filtro_semestre_id')) {
+            $query->whereHas('grupo', function ($q) use ($request) {
+                $q->where('semestre_id', $request->filtro_semestre_id);
+            });
+        }
+
+        if ($request->filled('filtro_docente_id')) {
+            $query->whereHas('grupo', function ($q) use ($request) {
+                $q->where('docente_id', $request->filtro_docente_id);
+            });
+        }
+
+        if ($request->filled('filtro_materia_id')) {
+            $query->whereHas('grupo', function ($q) use ($request) {
+                $q->where('materia_id', $request->filtro_materia_id);
+            });
+        }
+
+        if ($request->filled('filtro_grupo_id')) {
+            $query->where('grupo_id', $request->filtro_grupo_id);
+        }
+
+        if ($request->filled('filtro_aula_id')) {
+            $query->where('aula_id', $request->filtro_aula_id);
+        }
+
+        if ($request->filled('filtro_dia_semana')) {
+            $query->where('dia_semana', $request->filtro_dia_semana);
+        }
+
+        $horarios = $query->orderBy('dia_semana')
+            ->orderBy('hora_inicio')
+            ->get();
+
+        // Cargar datos para los selectores de filtros
+        $semestres = Semestre::orderBy('fecha_inicio', 'desc')->get();
+        $docentes = \App\Models\Docente::with('user')->orderBy('id')->get();
+        $materias = \App\Models\Materia::orderBy('nombre')->get();
+        $grupos = Grupo::orderBy('nombre')->get();
+        $aulas = Aula::orderBy('nombre')->get();
+
+        $diasSemana = [
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado',
+            7 => 'Domingo'
+        ];
+
+        return view('horarios.index', compact('horarios', 'semestres', 'docentes', 'materias', 'grupos', 'aulas', 'diasSemana'))
+            ->with('filtros', $request->all());
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Muestra el formulario para crear un nuevo horario.
      */
-    public function edit(string $id)
+    public function create()
     {
-        //
+        $grupos = Grupo::with(['semestre', 'materia', 'docente.user'])->get();
+        $aulas = Aula::all();
+
+        return view('horarios.create', compact('grupos', 'aulas'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Almacena un nuevo horario en la base de datos, revisando conflictos.
+     * Permite crear horarios para múltiples días a la vez.
      */
-    public function update(Request $request, string $id)
+    public function store(Request $request)
     {
-        //
+        // 1. VALIDAMOS LOS DATOS BÁSICOS
+        $request->validate([
+            'grupo_id' => ['required', 'exists:grupos,id'],
+            'dias_semana' => ['required', 'array', 'min:1'],
+            'dias_semana.*' => ['integer', 'between:1,7'],
+            'aula_id' => ['required', 'exists:aulas,id'],
+            'hora_inicio' => ['required', 'date_format:H:i'],
+            'hora_fin' => ['required', 'date_format:H:i', 'after:hora_inicio'],
+        ]);
+
+        $grupo_id = $request->input('grupo_id');
+        $dias = $request->input('dias_semana');
+        $inicio = $request->input('hora_inicio');
+        $fin = $request->input('hora_fin');
+        $aula_id = $request->input('aula_id');
+        
+        $grupo = Grupo::findOrFail($grupo_id);
+        $docente_id = $grupo->docente_id;
+
+        // Función de solapamiento
+        $funcionSolapamiento = function ($query) use ($inicio, $fin) {
+            $query->where('hora_inicio', '<', $fin)
+                  ->where('hora_fin', '>', $inicio);
+        };
+
+        // Array para almacenar conflictos
+        $conflictos = [];
+
+        // 2. VERIFICAR CONFLICTOS PARA CADA DÍA
+        foreach ($dias as $dia) {
+            // Conflicto 1: Aula
+            $conflictoAula = Horario::where('dia_semana', $dia)
+                ->where('aula_id', $aula_id)
+                ->where($funcionSolapamiento)
+                ->exists();
+
+            if ($conflictoAula) {
+                $nombreDia = $this->getNombreDia($dia);
+                $conflictos[] = "Conflicto de Aula el {$nombreDia}: Esta aula ya está ocupada en ese horario.";
+                continue;
+            }
+
+            // Conflicto 2: Docente
+            $conflictoDocente = Horario::where('dia_semana', $dia)
+                ->whereHas('grupo', function($query) use ($docente_id) {
+                    $query->where('docente_id', $docente_id);
+                })
+                ->where($funcionSolapamiento)
+                ->exists();
+
+            if ($conflictoDocente) {
+                $nombreDia = $this->getNombreDia($dia);
+                $conflictos[] = "Conflicto de Docente el {$nombreDia}: El docente ya tiene otra clase asignada en ese horario.";
+                continue;
+            }
+
+            // Conflicto 3: Grupo
+            $conflictoGrupo = Horario::where('dia_semana', $dia)
+                ->where('grupo_id', $grupo_id)
+                ->where($funcionSolapamiento)
+                ->exists();
+
+            if ($conflictoGrupo) {
+                $nombreDia = $this->getNombreDia($dia);
+                $conflictos[] = "Conflicto de Grupo el {$nombreDia}: Este grupo ya tiene una clase asignada en ese horario.";
+                continue;
+            }
+        }
+
+        // Si hay conflictos, volver con errores
+        if (!empty($conflictos)) {
+            return back()->withErrors(['conflictos' => $conflictos])->withInput();
+        }
+
+        // 3. SI NO HAY CONFLICTOS, GUARDAMOS TODOS LOS HORARIOS
+        DB::beginTransaction();
+        try {
+            foreach ($dias as $dia) {
+                Horario::create([
+                    'grupo_id' => $grupo_id,
+                    'aula_id' => $aula_id,
+                    'dia_semana' => $dia,
+                    'hora_inicio' => $inicio,
+                    'hora_fin' => $fin,
+                ]);
+            }
+            DB::commit();
+
+            return redirect()
+                ->route('horarios.index')
+                ->with('status', '✅ ¡Horario(s) creado(s) exitosamente para ' . count($dias) . ' día(s)!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Error al crear los horarios: ' . $e->getMessage()])->withInput();
+        }
     }
 
-/**
+    /**
+     * Muestra el formulario para editar un horario existente.
+     */
+    public function edit(Horario $horario)
+    {
+        $grupos = Grupo::with(['semestre', 'materia', 'docente.user'])->get();
+        $aulas = Aula::all();
+
+        return view('horarios.edit', compact('horario', 'grupos', 'aulas'));
+    }
+
+    /**
+     * Actualiza un horario existente en la base de datos.
+     */
+    public function update(Request $request, Horario $horario)
+    {
+        // Validación
+        $request->validate([
+            'grupo_id' => ['required', 'exists:grupos,id'],
+            'dia_semana' => ['required', 'integer', 'between:1,7'],
+            'aula_id' => ['required', 'exists:aulas,id'],
+            'hora_inicio' => ['required', 'date_format:H:i'],
+            'hora_fin' => ['required', 'date_format:H:i', 'after:hora_inicio'],
+        ]);
+
+        $grupo_id = $request->input('grupo_id');
+        $dia = $request->input('dia_semana');
+        $inicio = $request->input('hora_inicio');
+        $fin = $request->input('hora_fin');
+        $aula_id = $request->input('aula_id');
+        
+        $grupo = Grupo::findOrFail($grupo_id);
+        $docente_id = $grupo->docente_id;
+
+        // Función de solapamiento
+        $funcionSolapamiento = function ($query) use ($inicio, $fin) {
+            $query->where('hora_inicio', '<', $fin)
+                  ->where('hora_fin', '>', $inicio);
+        };
+
+        // Verificar conflictos (excluyendo el horario actual)
+        // Conflicto de Aula
+        $conflictoAula = Horario::where('dia_semana', $dia)
+            ->where('aula_id', $aula_id)
+            ->where('id', '!=', $horario->id)
+            ->where($funcionSolapamiento)
+            ->exists();
+
+        if ($conflictoAula) {
+            return back()->withErrors([
+                'aula_id' => '¡Conflicto de Aula! Esta aula ya está ocupada en ese día y hora.'
+            ])->withInput();
+        }
+
+        // Conflicto de Docente
+        $conflictoDocente = Horario::where('dia_semana', $dia)
+            ->where('id', '!=', $horario->id)
+            ->whereHas('grupo', function($query) use ($docente_id) {
+                $query->where('docente_id', $docente_id);
+            })
+            ->where($funcionSolapamiento)
+            ->exists();
+
+        if ($conflictoDocente) {
+            return back()->withErrors([
+                'docente_id' => '¡Conflicto de Docente! El docente ya tiene otra clase asignada en ese día y hora.'
+            ])->withInput();
+        }
+
+        // Conflicto de Grupo
+        $conflictoGrupo = Horario::where('dia_semana', $dia)
+            ->where('grupo_id', $grupo_id)
+            ->where('id', '!=', $horario->id)
+            ->where($funcionSolapamiento)
+            ->exists();
+
+        if ($conflictoGrupo) {
+            return back()->withErrors([
+                'grupo_id' => '¡Conflicto de Grupo! Este grupo ya tiene una clase asignada en ese día y hora.'
+            ])->withInput();
+        }
+
+        // Actualizar
+        $horario->update([
+            'grupo_id' => $grupo_id,
+            'aula_id' => $aula_id,
+            'dia_semana' => $dia,
+            'hora_inicio' => $inicio,
+            'hora_fin' => $fin,
+        ]);
+
+        return redirect()
+            ->route('horarios.index')
+            ->with('status', '✅ ¡Horario actualizado exitosamente!');
+    }
+
+    /**
      * Elimina el horario especificado de la base de datos.
      */
-    public function destroy(Horario $horario) // <-- ¿Dice Horario $horario aquí?
+    public function destroy(Horario $horario)
     {
-        // Guardamos el grupo al que pertenecía para la redirección
-        $grupo = $horario->grupo;
-
-        // 1. ELIMINAMOS EL HORARIO
         $horario->delete();
 
-        // 2. REDIRIGIMOS A LA LISTA DE HORARIOS DE ESE GRUPO
         return redirect()
-            ->route('grupos.horarios.index', $grupo) // <-- ¿Usas $grupo aquí?
-            ->with('status', '¡Horario eliminado exitosamente!');
+            ->route('horarios.index')
+            ->with('status', '✅ ¡Horario eliminado exitosamente!');
     }
 
     /**
- * Display the QR code for a specific Horario.
- */
-public function showQrCode(Horario $horario)
-{
-    // Maybe add authorization check: Is the logged-in user the assigned teacher?
-    // We can add this later using Policies. For now, any logged-in user can see QR.
-
-    // Load necessary data to display alongside the QR code (optional)
-    $horario->load(['grupo.materia', 'aula', 'grupo.docente.user']);
-
-    // Pass the horario object to the view
-    return view('horarios.qr', ['horario' => $horario]);
-}
-
+     * Helper: Obtener nombre del día
+     */
+    private function getNombreDia($dia)
+    {
+        $dias = [
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado',
+            7 => 'Domingo'
+        ];
+        return $dias[$dia] ?? 'Día ' . $dia;
+    }
 }

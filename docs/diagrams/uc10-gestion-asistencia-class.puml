@@ -1,0 +1,183 @@
+@startuml
+' ============================================================================
+' Diagrama de Clases - UC-010: Gestión de Asistencia Docente/Administrador
+' Sistema de Gestión de Horarios FICCT
+' Fecha: 28 de Octubre, 2025
+' ============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+
+' ============================================================================
+' CAPA DE PRESENTACIÓN (UI)
+' ============================================================================
+
+class "index.blade.php" as AsistenciasView <<Boundary>> {
+  - lista_asistencias: tabla HTML
+  - boton_registrar: link
+  - boton_eliminar: form
+  --
+  + mostrarHistorialAsistencia(horario): HTML
+  + navegarRegistroManual(horario): GET
+  + eliminarRegistro(id): DELETE
+}
+
+' ============================================================================
+' CAPA DE CONTROL
+' ============================================================================
+
+class AsistenciaController <<Control>> {
+  --
+  + index(horario: Horario): View
+  + create(horario: Horario): View
+  + store(request: Request, horario: Horario): RedirectResponse
+  + destroy(asistencia: Asistencia): RedirectResponse
+  + marcarAsistencia(request: Request, horario: Horario): RedirectResponse
+  + marcarAsistenciaQr(request: Request, horario: Horario): RedirectResponse
+}
+
+' ============================================================================
+' CAPA DE ENTIDAD
+' ============================================================================
+
+class Asistencia <<Entity>> {
+  - id: bigint
+  - horario_id: bigint
+  - docente_id: bigint
+  - fecha: date
+  - hora_registro: time
+  - estado: string
+  - metodo_registro: string
+  - justificacion: text
+  - created_at: timestamp
+  - updated_at: timestamp
+  --
+  + horario(): Horario
+  + docente(): Docente
+}
+
+class Horario <<Entity>> {
+  - id: bigint
+  - grupo_id: bigint
+  - aula_id: bigint
+  - dia_semana: integer
+  - hora_inicio: time
+  - hora_fin: time
+  --
+  + grupo(): Grupo
+  + aula(): Aula
+  + asistencias(): Collection<Asistencia>
+}
+
+class Docente <<Entity>> {
+  - id: bigint
+  - user_id: bigint
+  - codigo_docente: string
+  - carnet_identidad: string
+  - telefono: string
+  --
+  + user(): User
+  + grupos(): Collection<Grupo>
+  + asistencias(): Collection<Asistencia>
+}
+
+class AuditLog <<Entity>> {
+  - id: bigint
+  - user_id: bigint
+  - action: string
+  - model_type: string
+  - model_id: bigint
+  - details: text
+  - ip_address: string
+  - user_agent: text
+  --
+  + user(): User
+}
+
+' ============================================================================
+' RELACIONES
+' ============================================================================
+
+AsistenciasView ..> AsistenciaController : <<request>> route('horarios.asistencias.index')
+AsistenciaController --> Asistencia : <<CRUD>>
+AsistenciaController ..> AsistenciasView : <<render>> view('asistencias.index')
+
+Asistencia "*" --> "1" Horario : registrada en
+Asistencia "*" --> "1" Docente : marcada por
+AsistenciaController ..> AuditLog : registra en bitácora
+
+' ============================================================================
+' NOTAS
+' ============================================================================
+
+note right of AsistenciasView
+  **Vista Historial de Asistencia**
+  - Lista registros de un horario específico
+  - Columnas: Fecha, Hora Registro, Estado,
+    Método, Justificación
+  - Encabezado: Materia, Grupo, Día, Horario,
+    Aula, Docente, Semestre
+  - Botón "Registrar Asistencia Manual" (Admin)
+  - Botón "Eliminar" por registro
+  - Ordenado por fecha y hora descendente
+  - Eager loading: docente.user
+  - Ruta: resources/views/asistencias/index.blade.php
+end note
+
+note left of AsistenciaController
+  **Controlador de Gestión de Asistencia**
+
+  index(Horario):
+    - Carga asistencias del horario específico
+    - $horario->asistencias()->with('docente.user')
+    - Ordena por fecha y hora descendente
+
+  create(Horario):
+    - Muestra formulario registro manual (Admin)
+    - Retorna vista con horario
+
+  store(Request, Horario):
+    1. Valida: fecha, hora_registro, estado,
+       método, justificación (min:10)
+    2. VALIDACIÓN DE COHERENCIA:
+       - Día de semana coincida con horario
+       - Hora dentro de ventana ±15min desde inicio
+    3. Añade horario_id y docente_id
+    4. Crea registro de asistencia
+    5. Registra en AuditLog (acción manual)
+    6. Redirige con mensaje de éxito
+
+  marcarAsistencia(Request, Horario):
+    - Marca asistencia por BOTÓN (Docente)
+    - Valida: ventana ±15min, no duplicado hoy
+    - Verifica autorización (docente correcto)
+    - Estado: 'Presente', Método: 'Boton'
+    - Redirige a dashboard
+
+  marcarAsistenciaQr(Request, Horario):
+    - Marca asistencia por QR (Docente)
+    - Mismas validaciones que marcarAsistencia
+    - Estado: 'Presente', Método: 'QR'
+    - Redirige a dashboard
+
+  destroy(Asistencia):
+    - Guarda referencia al horario
+    - $asistencia->delete()
+    - Redirige a lista de asistencias del horario
+end note
+
+note bottom of Asistencia
+  **Entidad Asistencia**
+  - Modelo Eloquent
+  - Tabla: asistencias
+  - Relación belongsTo: Horario, Docente
+  - Fillable: horario_id, docente_id, fecha,
+    hora_registro, estado, metodo_registro, justificacion
+  - Estado: Presente, Tardanza, Falta, Permiso
+  - Método: Manual, Boton, QR
+  - Justificación obligatoria para registro manual
+  - Validación de coherencia de día y hora
+  - No permite registros duplicados mismo día
+end note
+
+@enduml

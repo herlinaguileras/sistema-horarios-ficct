@@ -35,16 +35,24 @@
                                 <x-input-error :messages="$errors->get('nivel_semestre')" class="mt-2" />
                             </div>
 
-                            <div>
-                                <x-input-label for="carrera" :value="__('Carrera')" />
-                                {{-- Usamos un <select> para las opciones fijas --}}
-                                <select id="carrera" name="carrera" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="Sistemas">Ing. en Sistemas</option>
-                                    <option value="Informatica">Ing. Informática</option>
-                                    <option value="Redes">Ing. en Redes y Telecom.</option>
-                                    <option value="Robotica">Ing. Robótica</option>
-                                </select>
-                                <x-input-error :messages="$errors->get('carrera')" class="mt-2" />
+                            <div class="md:col-span-2">
+                                <x-input-label :value="__('Carreras (Selecciona una o más)')" />
+                                <div class="mt-3 space-y-2">
+                                    @foreach($carreras as $carrera)
+                                        <label class="flex items-center">
+                                            <input type="checkbox" 
+                                                   name="carreras[]" 
+                                                   value="{{ $carrera->id }}" 
+                                                   {{ in_array($carrera->id, old('carreras', [])) ? 'checked' : '' }}
+                                                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                            <span class="ml-2 text-sm text-gray-700">
+                                                {{ $carrera->nombre }} ({{ $carrera->codigo }})
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <x-input-error :messages="$errors->get('carreras')" class="mt-2" />
+                                <p class="mt-1 text-xs text-gray-500">Selecciona al menos una carrera</p>
                             </div>
                         </div>
 

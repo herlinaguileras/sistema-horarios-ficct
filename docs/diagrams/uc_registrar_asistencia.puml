@@ -1,0 +1,8 @@
+@startuml
+left to right direction
+actor Docente
+rectangle Sistema {
+  usecase "Registrar asistencia" as UC1
+}
+Docente --> UC1
+@enduml

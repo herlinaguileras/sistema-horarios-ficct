@@ -1,0 +1,19 @@
+@startuml
+actor Docente
+participant "AsistenciaController" as AC
+participant "Auth" as Auth
+participant "DB" as DB
+
+Docente -> AC: POST /asistencias/marcar/{horario}
+AC -> Auth: get current user
+AC -> DB: check docente matches horario
+AC -> DB: check within time window
+AC -> DB: exists already marked?
+alt not marked
+  AC -> DB: CREATE asistencia (metodo_registro='Boton')
+  DB --> AC: asistencia
+  AC --> Docente: redirect dashboard (success)
+else marked or invalid
+  AC --> Docente: redirect dashboard (error)
+end
+@enduml

@@ -1,0 +1,10 @@
+@startuml
+left to right direction
+actor Administrador
+actor Coordinador
+rectangle Sistema {
+  usecase "Crear grupo" as UC4
+}
+Administrador --> UC4
+Coordinador --> UC4
+@enduml

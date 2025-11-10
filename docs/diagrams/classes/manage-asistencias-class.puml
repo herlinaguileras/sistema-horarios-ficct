@@ -1,0 +1,30 @@
+@startuml
+class Asistencia {
+  +id: int
+  +horario_id: int
+  +docente_id: int
+  +fecha: date
+  +hora_registro: time
+  +estado: string
+  +metodo_registro: string
+  +justificacion: text
+}
+
+class Horario {
+  +id: int
+  +hora_inicio: time
+  +hora_fin: time
+  +dia_semana: int
+}
+
+class Docente {
+  +id: int
+  +codigo_docente: string
+}
+
+Asistencia "*" -- "1" Horario
+Asistencia "*" -- "1" Docente
+
+note "Clases implicadas en la gestión y validaciones de asistencia (atributos extraídos de modelos)" as N
+N .. (Asistencia,Horario,Docente)
+@enduml

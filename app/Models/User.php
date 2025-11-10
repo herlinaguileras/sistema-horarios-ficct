@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
     ];
 
     /**
@@ -43,6 +44,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 /**
@@ -61,6 +63,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the primary role of the user (first role).
+     * Since users should only have one role, this returns the first one.
+     */
+    public function role()
+    {
+        return $this->roles()->first();
+    }
+
+    /**
      * Check if the user has a specific role.
      *
      * @param string $roleName
@@ -72,4 +83,17 @@ class User extends Authenticatable
         return $this->roles()->where('name', $roleName)->exists();
     }
 
+    /**
+     * Check if the user has any permission.
+     *
+     * @param string $permissionName
+     * @return bool
+     */
+    public function hasPermission(string $permissionName): bool
+    {
+        // Verificar a través de los roles del usuario
+        return $this->roles()->whereHas('permissions', function($query) use ($permissionName) {
+            $query->where('name', $permissionName);
+        })->exists();
+    }
 }
