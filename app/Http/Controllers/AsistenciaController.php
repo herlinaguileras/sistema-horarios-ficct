@@ -8,6 +8,7 @@ use Illuminate\Http\Request; // Likely already there
 use Carbon\Carbon;
 use App\Models\AuditLog; // <-- NUEVO
 use Illuminate\Support\Facades\Auth; // <-- NUEVO
+use Illuminate\Support\Facades\Hash; // Para verificación de contraseña
 
 class AsistenciaController extends Controller
 {
@@ -162,70 +163,76 @@ public function destroy(Asistencia $asistencia) // Use Route Model Binding
 
 
 /**
- * Registra la asistencia del docente para un horario específico (marcado por botón).
- */
-/**
-     * Registra la asistencia del docente para un horario específico (marcado por botón).
+     * Registra la asistencia del docente manualmente con verificación de contraseña.
      */
     public function marcarAsistencia(Request $request, Horario $horario)
     {
-        // 1. Obtener datos actuales
+        // 1. Validar la contraseña ingresada
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        // Verificar que la contraseña sea correcta
+        if (!Hash::check($request->password, Auth::user()->password)) {
+            return back()->withErrors([
+                'password_error_'.$horario->id => 'La contraseña ingresada es incorrecta.'
+            ])->withInput();
+        }
+
+        // 2. Obtener datos actuales
         $now = Carbon::now();
-        $todayDate = $now->toDateString(); // Fecha actual 'YYYY-MM-DD'
-        $currentTime = $now->format('H:i:s'); // Hora actual 'HH:MM:SS'
-        $docente = Auth::user()->docente; // Obtener el perfil docente del usuario logueado
+        $todayDate = $now->toDateString();
+        $currentTime = $now->format('H:i:s');
+        $docente = Auth::user()->docente;
 
         // Verificación básica: ¿Es el docente correcto?
         if (!$docente || $horario->grupo->docente_id !== $docente->id) {
              abort(403, 'No autorizado para marcar esta asistencia.');
         }
 
-        // 2. Validar ventana de tiempo (-15/+15 min desde inicio)
+        // 3. Validar ventana de tiempo (-15/+15 min desde inicio)
         $margenMinutos = 15;
         $inicioVentana = Carbon::parse($horario->hora_inicio)->subMinutes($margenMinutos)->format('H:i:s');
         $finVentana    = Carbon::parse($horario->hora_inicio)->addMinutes($margenMinutos)->format('H:i:s');
 
         if ($currentTime < $inicioVentana || $currentTime > $finVentana) {
-            // Si está fuera de la ventana, redirige con error
-            return redirect()->route('dashboard') // Redirige al dashboard del docente
-                   // Use a specific error key related to the horario ID
-                   ->withErrors(['asistencia_error_'.$horario->id => 'No puede marcar asistencia fuera de la ventana permitida ('.$inicioVentana.' - '.$finVentana.').']);
+            return back()->withErrors([
+                'asistencia_error_'.$horario->id => 'No puede marcar asistencia fuera de la ventana permitida ('.$inicioVentana.' - '.$finVentana.').'
+            ])->withInput();
         }
 
-        // 3. Validar si ya marcó asistencia HOY para ESTA clase
+        // 4. Validar si ya marcó asistencia HOY para ESTA clase
         $alreadyMarked = Asistencia::where('horario_id', $horario->id)
                                   ->where('docente_id', $docente->id)
                                   ->where('fecha', $todayDate)
                                   ->exists();
 
         if ($alreadyMarked) {
-            // Si ya marcó, redirige con advertencia
-             return redirect()->route('dashboard')
-                   // Use a specific error key related to the horario ID
-                   ->withErrors(['asistencia_error_'.$horario->id => 'Ya ha marcado asistencia para esta clase hoy.']);
+             return back()->withErrors([
+                'asistencia_error_'.$horario->id => 'Ya ha marcado asistencia para esta clase hoy.'
+            ])->withInput();
         }
 
-        // 4. Si pasa todas las validaciones, CREAR el registro
+        // 5. Si pasa todas las validaciones, CREAR el registro
         Asistencia::create([
             'horario_id' => $horario->id,
             'docente_id' => $docente->id,
             'fecha' => $todayDate,
             'hora_registro' => $currentTime,
-            'estado' => 'Presente', // Por defecto al marcar
-            'metodo_registro' => 'Boton', // Indicar que fue por botón
+            'estado' => 'Presente',
+            'metodo_registro' => 'Manual',
             // 'justificacion' queda null
         ]);
 
-        // 5. Redirigir de vuelta al dashboard con mensaje de éxito
-        return redirect()->route('dashboard')
-               ->with('status', '¡Asistencia para '.$horario->grupo->materia->sigla.' marcada exitosamente!');
+        // 6. Redirigir de vuelta al dashboard con mensaje de éxito
+        return back()->with('status', '¡Asistencia para '.$horario->grupo->materia->sigla.' marcada exitosamente!');
     }
 
 
 /**
- * Registra la asistencia del docente via QR scan (GET request).
+ * Registra la asistencia del docente via QR (sin contraseña).
  */
-public function marcarAsistenciaQr(Request $request, Horario $horario) // Still use Request if needed later
+public function marcarAsistenciaQr(Request $request, Horario $horario)
 {
     // 1. Obtener datos actuales
     $now = Carbon::now();
@@ -244,8 +251,9 @@ public function marcarAsistenciaQr(Request $request, Horario $horario) // Still 
     $finVentana    = Carbon::parse($horario->hora_inicio)->addMinutes($margenMinutos)->format('H:i:s');
 
     if ($currentTime < $inicioVentana || $currentTime > $finVentana) {
-        return redirect()->route('dashboard')
-               ->withErrors(['asistencia_error_'.$horario->id => 'QR: No puede marcar asistencia fuera de la ventana permitida ('.$inicioVentana.' - '.$finVentana.').']);
+        return back()->withErrors([
+            'asistencia_error_'.$horario->id => 'No puede marcar asistencia fuera de la ventana permitida ('.$inicioVentana.' - '.$finVentana.').'
+        ]);
     }
 
     // 3. Validar si ya marcó asistencia HOY para ESTA clase
@@ -255,8 +263,9 @@ public function marcarAsistenciaQr(Request $request, Horario $horario) // Still 
                               ->exists();
 
     if ($alreadyMarked) {
-         return redirect()->route('dashboard')
-               ->withErrors(['asistencia_error_'.$horario->id => 'QR: Ya ha marcado asistencia para esta clase hoy.']);
+         return back()->withErrors([
+            'asistencia_error_'.$horario->id => 'Ya ha marcado asistencia para esta clase hoy.'
+        ]);
     }
 
     // 4. CREAR el registro (Marcar como 'QR')
@@ -266,13 +275,12 @@ public function marcarAsistenciaQr(Request $request, Horario $horario) // Still 
         'fecha' => $todayDate,
         'hora_registro' => $currentTime,
         'estado' => 'Presente',
-        'metodo_registro' => 'QR', // <-- Indicate QR method
+        'metodo_registro' => 'QR',
         // 'justificacion' queda null
     ]);
 
-    // 5. Redirigir de vuelta al dashboard con mensaje de éxito
-    return redirect()->route('dashboard')
-           ->with('status', '¡Asistencia QR para '.$horario->grupo->materia->sigla.' marcada exitosamente!');
+    // 5. Redirigir de vuelta con mensaje de éxito
+    return back()->with('status', '¡Asistencia para '.$horario->grupo->materia->sigla.' marcada exitosamente con QR!');
 }
 
 }

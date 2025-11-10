@@ -1,15 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Estadísticas Detalladas: {{ $docente->user->name }}
-                </h2>
-                <p class="text-sm text-gray-600">Código: {{ $docente->codigo_docente }}</p>
-            </div>
-            <a href="{{ route('estadisticas.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                ← Volver
-            </a>
+        <div>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                Estadísticas Detalladas: {{ $docente->user->name }}
+            </h2>
+            <p class="text-sm text-gray-600">Código: {{ $docente->codigo_docente }}</p>
         </div>
     </x-slot>
 
