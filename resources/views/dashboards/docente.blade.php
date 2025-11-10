@@ -60,7 +60,7 @@
                     {{-- Contenido Tab Asistencia --}}
                     <div x-show="activeTab === 'asistencia'">
                         <h4 class="mb-4 font-medium text-md">Marcar Asistencia para tus Clases</h4>
-                        
+
                         @if($horariosDocente->isEmpty())
                             <p class="text-gray-500">No tienes horarios asignados para marcar asistencia.</p>
                         @else
@@ -71,7 +71,7 @@
                                             {{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->materia->nombre }}
                                         </h5>
                                         <p class="text-sm text-gray-600">
-                                            Grupo: {{ $horario->grupo->nombre }} | 
+                                            Grupo: {{ $horario->grupo->nombre }} |
                                             @php
                                                 $dias = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
                                             @endphp
@@ -79,7 +79,7 @@
                                             {{ date('H:i', strtotime($horario->hora_inicio)) }} - {{ date('H:i', strtotime($horario->hora_fin)) }}
                                         </p>
                                         <p class="mb-3 text-sm text-gray-600">Aula: {{ $horario->aula->nombre }}</p>
-                                        
+
                                         <div class="flex space-x-2">
                                             {{-- Botón QR --}}
                                             <form action="{{ route('asistencias.marcar.qr', $horario->id) }}" method="POST" class="inline">
@@ -113,10 +113,10 @@
                     {{-- Contenido Tab Estadísticas --}}
                     <div x-show="activeTab === 'estadisticas'">
                         <h4 class="mb-4 font-medium text-md">Mis Estadísticas de Asistencia</h4>
-                        
+
                         @if($docente)
                             <div class="p-4 mb-4 border rounded-lg shadow-sm bg-gray-50">
-                                <a href="{{ route('estadisticas.show', $docente->id) }}" 
+                                <a href="{{ route('estadisticas.show', $docente->id) }}"
                                    class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -124,7 +124,7 @@
                                     Ver Estadísticas Completas
                                 </a>
                             </div>
-                            
+
                             {{-- Resumen Rápido --}}
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div class="p-4 bg-blue-50 rounded-lg">

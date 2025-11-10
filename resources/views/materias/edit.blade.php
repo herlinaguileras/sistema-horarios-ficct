@@ -41,12 +41,12 @@
                                     @php
                                         $carrerasSeleccionadasIds = old('carreras', $materia->carreras->pluck('id')->toArray());
                                     @endphp
-                                    
+
                                     @foreach($carreras as $carrera)
                                         <label class="flex items-center">
-                                            <input type="checkbox" 
-                                                   name="carreras[]" 
-                                                   value="{{ $carrera->id }}" 
+                                            <input type="checkbox"
+                                                   name="carreras[]"
+                                                   value="{{ $carrera->id }}"
                                                    {{ in_array($carrera->id, $carrerasSeleccionadasIds) ? 'checked' : '' }}
                                                    class="text-indigo-600 border-gray-300 rounded shadow-sm focus:ring-indigo-500">
                                             <span class="ml-2 text-sm text-gray-700">

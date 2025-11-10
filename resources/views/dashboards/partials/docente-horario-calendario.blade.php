@@ -15,7 +15,7 @@
                             </th>
                             @foreach ($diasSemana as $numDia => $nombreDia)
                                 <th class="px-3 py-3 text-xs font-bold tracking-wider text-center text-white uppercase border-r border-indigo-400 last:border-r-0">
-                                    {{ $nombreDia }}
+                                    {{ strtoupper(substr($nombreDia, 0, 3)) }}
                                 </th>
                             @endforeach
                         </tr>
@@ -48,6 +48,8 @@
                             
                             // Organizar horarios por día y calcular su posición en bloques
                             $horariosPorDiaYBloque = [];
+                            $bloquesOcupados = []; // Para rastrear qué bloques tienen clases
+                            
                             foreach ($horariosDocente as $horario) {
                                 $diaNum = $horario->dia_semana;
                                 
@@ -66,6 +68,7 @@
                                             $horariosPorDiaYBloque[$indiceBloque][$diaNum] = [];
                                         }
                                         $horariosPorDiaYBloque[$indiceBloque][$diaNum][] = $horario;
+                                        $bloquesOcupados[$indiceBloque] = true; // Marcar bloque como ocupado
                                     }
                                 }
                             }
@@ -87,67 +90,112 @@
                         @endphp
 
                         @foreach ($bloques as $indiceBloque => $bloque)
-                            <tr class="hover:bg-gray-50 {{ $indiceBloque % 2 == 0 ? 'bg-white' : 'bg-gray-50' }}">
-                                {{-- Columna de hora --}}
-                                <td class="px-3 py-2 text-xs font-semibold text-gray-700 border-r border-b border-gray-200 whitespace-nowrap">
-                                    {{ $bloque['inicio'] }} - {{ $bloque['fin'] }}
-                                </td>
-
-                                {{-- Columnas de días --}}
-                                @foreach ($diasSemana as $numDia => $nombreDia)
-                                    <td class="relative px-2 py-2 text-center border-r border-b border-gray-200 last:border-r-0">
-                                        @if (isset($horariosPorDiaYBloque[$indiceBloque][$numDia]))
-                                            @foreach ($horariosPorDiaYBloque[$indiceBloque][$numDia] as $horario)
-                                                @php
-                                                    // Asignar color único a cada materia
-                                                    $materiaId = $horario->grupo->materia->id;
-                                                    if (!isset($materiaColores[$materiaId])) {
-                                                        $materiaColores[$materiaId] = $colores[$colorIndex % count($colores)];
-                                                        $colorIndex++;
-                                                    }
-                                                    $colorClase = $materiaColores[$materiaId];
-                                                    
-                                                    // Calcular si este es el primer bloque del horario
-                                                    $horaInicioPartes = explode(':', $horario->hora_inicio);
-                                                    $horarioInicioMin = (int)$horaInicioPartes[0] * 60 + (int)$horaInicioPartes[1];
-                                                    $esPrimerBloque = $bloque['inicio_min'] <= $horarioInicioMin && $bloque['fin_min'] > $horarioInicioMin;
-                                                @endphp
-                                                
-                                                <div class="px-2 py-1 mb-1 text-xs font-semibold border-l-4 rounded {{ $colorClase }}">
-                                                    <div class="font-bold">{{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->nombre }}</div>
-                                                    @if ($esPrimerBloque)
-                                                        <div class="text-xs opacity-90">{{ $horario->aula->nombre }}</div>
-                                                        <div class="text-xs opacity-75">
-                                                            {{ date('H:i', strtotime($horario->hora_inicio)) }} - {{ date('H:i', strtotime($horario->hora_fin)) }}
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        @else
-                                            <span class="text-gray-300">—</span>
-                                        @endif
+                            {{-- Solo mostrar bloques que tienen clases asignadas --}}
+                            @if (isset($bloquesOcupados[$indiceBloque]))
+                                <tr class="hover:bg-gray-50 {{ $indiceBloque % 2 == 0 ? 'bg-white' : 'bg-gray-50' }}">
+                                    {{-- Columna de hora --}}
+                                    <td class="px-3 py-2 text-xs font-semibold text-gray-700 border-r border-b border-gray-200 whitespace-nowrap">
+                                        {{ $bloque['inicio'] }} - {{ $bloque['fin'] }}
                                     </td>
-                                @endforeach
-                            </tr>
+
+                                    {{-- Columnas de días --}}
+                                    @foreach ($diasSemana as $numDia => $nombreDia)
+                                        <td class="relative px-2 py-2 text-center border-r border-b border-gray-200 last:border-r-0">
+                                            @if (isset($horariosPorDiaYBloque[$indiceBloque][$numDia]))
+                                                @foreach ($horariosPorDiaYBloque[$indiceBloque][$numDia] as $horario)
+                                                    @php
+                                                        // Asignar color único a cada materia
+                                                        $materiaId = $horario->grupo->materia->id;
+                                                        if (!isset($materiaColores[$materiaId])) {
+                                                            $materiaColores[$materiaId] = $colores[$colorIndex % count($colores)];
+                                                            $colorIndex++;
+                                                        }
+                                                        $colorClase = $materiaColores[$materiaId];
+                                                        
+                                                        // Calcular si este es el primer bloque del horario
+                                                        $horaInicioPartes = explode(':', $horario->hora_inicio);
+                                                        $horarioInicioMin = (int)$horaInicioPartes[0] * 60 + (int)$horaInicioPartes[1];
+                                                        $esPrimerBloque = $bloque['inicio_min'] <= $horarioInicioMin && $bloque['fin_min'] > $horarioInicioMin;
+                                                    @endphp
+                                                    
+                                                    <div class="px-2 py-1 mb-1 text-xs font-semibold border-l-4 rounded {{ $colorClase }}">
+                                                        <div class="font-bold">{{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->nombre }}</div>
+                                                        <div class="text-xs opacity-90">{{ $horario->aula->nombre }}</div>
+                                                        @if ($esPrimerBloque)
+                                                            <div class="text-xs font-normal opacity-75 mt-1">
+                                                                {{ $horario->grupo->materia->nombre }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                <span class="text-gray-300">—</span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>
-            </div>
-
-            {{-- Leyenda de Colores --}}
+            </div>            {{-- Leyenda de Materias --}}
             <div class="p-4 mt-4 border rounded-lg bg-gray-50">
                 <h5 class="mb-3 text-sm font-semibold text-gray-700">Leyenda de Materias:</h5>
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                <div class="space-y-2">
                     @php
-                        $materiasUnicas = $horariosDocente->pluck('grupo.materia')->unique('id');
+                        // Obtener información completa de cada materia con sus horarios
+                        $materiasConInfo = [];
+                        foreach ($horariosDocente as $horario) {
+                            $materiaId = $horario->grupo->materia->id;
+                            if (!isset($materiasConInfo[$materiaId])) {
+                                $materiasConInfo[$materiaId] = [
+                                    'materia' => $horario->grupo->materia,
+                                    'grupos' => [],
+                                    'horarios' => []
+                                ];
+                            }
+                            
+                            // Agregar grupo si no existe
+                            $grupoNombre = $horario->grupo->nombre;
+                            if (!in_array($grupoNombre, $materiasConInfo[$materiaId]['grupos'])) {
+                                $materiasConInfo[$materiaId]['grupos'][] = $grupoNombre;
+                            }
+                            
+                            // Agregar horario
+                            $diaNum = $horario->dia_semana;
+                            $horarioTexto = $diasSemana[$diaNum] . ' ' . 
+                                          date('H:i', strtotime($horario->hora_inicio)) . ' - ' . 
+                                          date('H:i', strtotime($horario->hora_fin));
+                            
+                            if (!in_array($horarioTexto, $materiasConInfo[$materiaId]['horarios'])) {
+                                $materiasConInfo[$materiaId]['horarios'][] = $horarioTexto;
+                            }
+                        }
                     @endphp
-                    @foreach ($materiasUnicas as $materia)
+                    
+                    @foreach ($materiasConInfo as $materiaId => $info)
                         @php
-                            $colorClase = $materiaColores[$materia->id] ?? 'bg-gray-100 border-gray-400 text-gray-900';
+                            $colorClase = $materiaColores[$materiaId] ?? 'bg-gray-100 border-gray-400 text-gray-900';
                         @endphp
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 mr-2 border-l-4 rounded {{ $colorClase }}"></div>
-                            <span class="text-xs font-medium">{{ $materia->sigla }} - {{ $materia->nombre }}</span>
+                        <div class="p-3 border rounded-lg {{ $colorClase }}">
+                            <div class="flex items-start">
+                                <div class="w-1 h-full mr-3 rounded {{ $colorClase }}"></div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm font-bold">{{ $info['materia']->sigla }}</span>
+                                        <span class="text-xs">Grupo(s): {{ implode(', ', $info['grupos']) }}</span>
+                                    </div>
+                                    <div class="mb-2 text-xs font-medium">{{ $info['materia']->nombre }}</div>
+                                    <div class="text-xs opacity-75">
+                                        <span class="font-semibold">Horarios:</span>
+                                        <div class="mt-1 space-y-1">
+                                            @foreach ($info['horarios'] as $horarioTexto)
+                                                <div>• {{ $horarioTexto }}</div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     @endforeach
                 </div>
