@@ -67,10 +67,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () { // <-
     // Gestión Horarios (Módulo Independiente)
     Route::resource('horarios', HorarioController::class)->except(['show']);
 
-    // Gestión de Estadísticas
+});
+
+// Gestión de Estadísticas (accesible para docentes y admins)
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/estadisticas', [App\Http\Controllers\EstadisticaController::class, 'index'])->name('estadisticas.index');
     Route::get('/estadisticas/{docente}', [App\Http\Controllers\EstadisticaController::class, 'show'])->name('estadisticas.show');
-
 });
 
 // Profile Routes (accessible to any logged-in user)
