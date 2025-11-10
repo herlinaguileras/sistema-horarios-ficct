@@ -12,6 +12,7 @@ use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\DocenteDashboardController;
 
 // Welcome Route - Redirect to login/dashboard
 Route::get('/', function () {
@@ -73,6 +74,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () { // <-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/estadisticas', [App\Http\Controllers\EstadisticaController::class, 'index'])->name('estadisticas.index');
     Route::get('/estadisticas/{docente}', [App\Http\Controllers\EstadisticaController::class, 'show'])->name('estadisticas.show');
+});
+
+// Rutas específicas para Docentes
+Route::middleware(['auth', 'verified', 'role:docente'])->group(function () {
+    Route::get('/docente/horario-semanal', [DocenteDashboardController::class, 'horarioSemanal'])->name('docente.horario');
+    Route::get('/docente/marcar-asistencia', [DocenteDashboardController::class, 'marcarAsistencia'])->name('docente.asistencia');
+    Route::get('/docente/mis-estadisticas', [DocenteDashboardController::class, 'misEstadisticas'])->name('docente.estadisticas');
 });
 
 // Profile Routes (accessible to any logged-in user)
