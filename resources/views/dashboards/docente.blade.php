@@ -54,45 +54,7 @@
 
                     {{-- Contenido Tab Horario --}}
                     <div x-show="activeTab === 'horario'">
-                        @if ($semestreActivo)
-                            <h4 class="mb-4 font-medium text-md">Tu Horario Semanal - {{ $semestreActivo->nombre }}</h4>
-
-                            @if($horariosDocente->isEmpty())
-                                <p class="text-gray-500">No tienes horarios asignados para este semestre.</p>
-                            @else
-                                @forelse ($diasSemana as $numDia => $nombreDia)
-                                    @if ($horariosPorDia->has($numDia))
-                                        <div class="p-4 mb-6 border rounded-lg shadow-sm">
-                                            <h5 class="mb-3 text-lg font-semibold text-indigo-700">{{ $nombreDia }}</h5>
-                                            <table class="min-w-full text-sm divide-y divide-gray-200">
-                                                <thead class="bg-gray-50">
-                                                    <tr>
-                                                        <th class="px-4 py-2 font-medium tracking-wider text-left text-gray-500 uppercase">Hora</th>
-                                                        <th class="px-4 py-2 font-medium tracking-wider text-left text-gray-500 uppercase">Materia</th>
-                                                        <th class="px-4 py-2 font-medium tracking-wider text-left text-gray-500 uppercase">Grupo</th>
-                                                        <th class="px-4 py-2 font-medium tracking-wider text-left text-gray-500 uppercase">Aula</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="bg-white divide-y divide-gray-200">
-                                                    @foreach ($horariosPorDia[$numDia] as $horario)
-                                                        <tr>
-                                                            <td class="px-4 py-2 whitespace-nowrap">{{ date('H:i', strtotime($horario->hora_inicio)) }} - {{ date('H:i', strtotime($horario->hora_fin)) }}</td>
-                                                            <td class="px-4 py-2 whitespace-nowrap">{{ $horario->grupo->materia->sigla }} - {{ $horario->grupo->materia->nombre }}</td>
-                                                            <td class="px-4 py-2 whitespace-nowrap">{{ $horario->grupo->nombre }}</td>
-                                                            <td class="px-4 py-2 whitespace-nowrap">{{ $horario->aula->nombre }} (P.{{ $horario->aula->piso }})</td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    @endif
-                                @empty
-                                    <p class="text-gray-500">No hay días definidos.</p>
-                                @endforelse
-                            @endif
-                        @else
-                            <p class="text-red-500">No se encontró un semestre activo.</p>
-                        @endif
+                        @include('dashboards.partials.docente-horario-calendario')
                     </div>
 
                     {{-- Contenido Tab Asistencia --}}
