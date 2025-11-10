@@ -78,7 +78,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Rutas específicas para Docentes
 Route::middleware(['auth', 'verified', 'role:docente'])->group(function () {
-    Route::get('/docente/horario-semanal', [DocenteDashboardController::class, 'horarioSemanal'])->name('docente.horario');
     Route::get('/docente/marcar-asistencia', [DocenteDashboardController::class, 'marcarAsistencia'])->name('docente.asistencia');
     Route::get('/docente/mis-estadisticas', [DocenteDashboardController::class, 'misEstadisticas'])->name('docente.estadisticas');
 });

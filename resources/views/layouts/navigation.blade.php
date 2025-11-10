@@ -79,12 +79,6 @@
                 @if(Auth::user() && Auth::user()->hasRole('docente'))
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                        <x-nav-link :href="route('docente.horario')" :active="request()->routeIs('docente.horario')">
-                            {{ __('Horario Semanal') }}
-                        </x-nav-link>
-                    </div>
-
-                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link :href="route('docente.asistencia')" :active="request()->routeIs('docente.asistencia')">
                             {{ __('Marcar Asistencia') }}
                         </x-nav-link>
@@ -185,9 +179,6 @@
 
              {{-- === START RESPONSIVE DOCENTE LINKS === --}}
             @if(Auth::user() && Auth::user()->hasRole('docente'))
-                <x-responsive-nav-link :href="route('docente.horario')" :active="request()->routeIs('docente.horario')">
-                    {{ __('Horario Semanal') }}
-                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('docente.asistencia')" :active="request()->routeIs('docente.asistencia')">
                     {{ __('Marcar Asistencia') }}
                 </x-responsive-nav-link>

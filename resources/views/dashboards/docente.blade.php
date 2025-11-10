@@ -1,44 +1,108 @@
-<x-app-layout>
+<x-app-layout><x-app-layout><x-app-layout>
+
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ __('Panel de Docente') }}
-        </h2>
+
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">    <x-slot name="header">    <x-slot name="header">
+
+            {{ __('Mi Horario Semanal') }}
+
+        </h2>        <h2 class="text-xl font-semibold leading-tight text-gray-800">        <h2 class="text-xl font-semibold leading-tight text-gray-800">
+
     </x-slot>
 
-    <div class="py-12" x-data="{ activeTab: '{{ $activeTab ?? 'horario' }}' }">
-        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            {{ __('Mi Horario Semanal') }}            {{ __('Mi Horario Semanal') }}
+
+    <div class="py-12">
+
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">        </h2>        </h2>
+
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <h3 class="mb-4 text-lg font-semibold">Bienvenido/a, {{ $docente->user->name }}</h3>
 
-                    {{-- Pestañas de Navegación --}}
-                    <div class="mb-6 border-b border-gray-200">
-                        <nav class="flex -mb-px space-x-8" aria-label="Tabs">
-                            {{-- Tab Horario --}}
-                            <button
-                                @click="activeTab = 'horario'"
-                                :class="{
-                                    'border-indigo-500 text-indigo-600': activeTab === 'horario',
-                                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'horario'
-                                }"
-                                class="px-1 py-4 text-sm font-medium border-b-2 whitespace-nowrap"
-                            >
-                                📅 Mi Horario Semanal
-                            </button>
+                <div class="p-6 text-gray-900">    </x-slot>    </x-slot>
 
-                            {{-- Tab Marcar Asistencia --}}
-                            <button
-                                @click="activeTab = 'asistencia'"
-                                :class="{
-                                    'border-indigo-500 text-indigo-600': activeTab === 'asistencia',
-                                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'asistencia'
-                                }"
-                                class="px-1 py-4 text-sm font-medium border-b-2 whitespace-nowrap"
-                            >
-                                ✅ Marcar Asistencia
-                            </button>
+                    
 
-                            {{-- Tab Estadísticas --}}
+                    {{-- Información del Docente --}}
+
+                    <div class="mb-6">
+
+                        <h3 class="mb-2 text-lg font-semibold">Bienvenido/a, {{ $docente->user->name }}</h3>    <div class="py-12">    <div class="py-12">
+
+                        <p class="text-sm text-gray-600">Código: {{ $docente->codigo_docente }}</p>
+
+                    </div>        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+
+
+
+                    {{-- Calendario Semanal --}}            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+
+                    @if($horariosDocente->isEmpty())
+
+                        <div class="p-6 text-center bg-gray-50 rounded-lg">                <div class="p-6 text-gray-900">                <div class="p-6 text-gray-900">
+
+                            <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />                                        
+
+                            </svg>
+
+                            <p class="mt-4 text-gray-500">No tienes horarios asignados actualmente.</p>                    {{-- Información del Docente --}}                    {{-- Información del Docente --}}
+
+                        </div>
+
+                    @else                    <div class="mb-6">                    <div class="mb-6">
+
+                        @include('dashboards.partials.docente-horario-calendario')
+
+                    @endif                        <h3 class="mb-2 text-lg font-semibold">Bienvenido/a, {{ $docente->user->name }}</h3>                        <h3 class="mb-2 text-lg font-semibold">Bienvenido/a, {{ $docente->user->name }}</h3>
+
+
+
+                </div>                        <p class="text-sm text-gray-600">Código: {{ $docente->codigo_docente }}</p>                        <p class="text-sm text-gray-600">Código: {{ $docente->codigo_docente }}</p>
+
+            </div>
+
+        </div>                    </div>                    </div>
+
+    </div>
+
+</x-app-layout>
+
+
+                    {{-- Calendario Semanal --}}                    {{-- Calendario Semanal --}}
+
+                    @if($horariosDocente->isEmpty())                    @if($horariosDocente->isEmpty())
+
+                        <div class="p-6 text-center bg-gray-50 rounded-lg">                        <div class="p-6 text-center bg-gray-50 rounded-lg">
+
+                            <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">                            <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+
+                            </svg>                            </svg>
+
+                            <p class="mt-4 text-gray-500">No tienes horarios asignados actualmente.</p>                            <p class="mt-4 text-gray-500">No tienes horarios asignados actualmente.</p>
+
+                        </div>                        </div>
+
+                    @else                    @else
+
+                        @include('dashboards.partials.docente-horario-calendario')                        @include('dashboards.partials.docente-horario-calendario')
+
+                    @endif                    @endif
+
+
+
+                </div>                </div>
+
+            </div>            </div>
+
+        </div>        </div>
+
+    </div>    </div>
+
+</x-app-layout></x-app-layout>
+
                             <button
                                 @click="activeTab = 'estadisticas'"
                                 :class="{

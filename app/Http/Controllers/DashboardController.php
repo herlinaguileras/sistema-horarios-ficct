@@ -29,13 +29,6 @@ public function index(Request $request)
         $user = Auth::user();
         /** @var \App\Models\User $user */
 
-        // Redirigir docentes a su horario semanal
-        if ($user->hasRole('docente')) {
-            return redirect()->route('docente.horario');
-        }
-
-        // Para admins, mostrar el dashboard completo
-
         // --- Check User Role and Redirect to Appropriate Dashboard ---
         if ($user->hasRole('admin')) {
             return $this->adminDashboard($request);
