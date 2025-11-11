@@ -84,16 +84,35 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if the user has any permission.
+     * Verificar si el usuario tiene acceso a un módulo específico
      *
-     * @param string $permissionName
+     * @param string $moduleName
      * @return bool
      */
-    public function hasPermission(string $permissionName): bool
+    public function hasModule(string $moduleName): bool
     {
+        // Admin tiene acceso a todos los módulos
+        if ($this->hasRole('admin')) {
+            return true;
+        }
+
         // Verificar a través de los roles del usuario
-        return $this->roles()->whereHas('permissions', function($query) use ($permissionName) {
-            $query->where('name', $permissionName);
+        return $this->roles()->whereHas('modules', function($query) use ($moduleName) {
+            $query->where('module_name', $moduleName);
         })->exists();
+    }
+
+    /**
+     * Obtener todos los módulos del usuario (a través de sus roles)
+     *
+     * @return array
+     */
+    public function getModules(): array
+    {
+        $modules = [];
+        foreach ($this->roles as $role) {
+            $modules = array_merge($modules, $role->getModuleNames());
+        }
+        return array_unique($modules);
     }
 }

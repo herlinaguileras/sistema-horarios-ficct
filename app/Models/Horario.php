@@ -22,6 +22,24 @@ class Horario extends Model
     ];
 
     /**
+     * Obtener el nombre del día de la semana
+     */
+    public function getDiaNombreAttribute()
+    {
+        $dias = [
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado',
+            7 => 'Domingo'
+        ];
+
+        return $dias[$this->dia_semana] ?? 'Desconocido';
+    }
+
+    /**
      * Un horario pertenece a un Grupo.
      */
     public function grupo()

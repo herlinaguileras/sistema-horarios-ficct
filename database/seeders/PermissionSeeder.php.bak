@@ -61,13 +61,32 @@ class PermissionSeeder extends Seeder
             ['name' => 'crear_asistencias', 'description' => 'Registrar asistencias', 'module' => 'Asistencias'],
             ['name' => 'eliminar_asistencias', 'description' => 'Eliminar registros de asistencia', 'module' => 'Asistencias'],
 
+            // Aulas
+            ['name' => 'ver_aulas', 'description' => 'Ver lista de aulas', 'module' => 'Aulas'],
+            ['name' => 'crear_aulas', 'description' => 'Crear nuevas aulas', 'module' => 'Aulas'],
+            ['name' => 'editar_aulas', 'description' => 'Editar aulas existentes', 'module' => 'Aulas'],
+            ['name' => 'eliminar_aulas', 'description' => 'Eliminar aulas', 'module' => 'Aulas'],
+
+            // Semestres
+            ['name' => 'ver_semestres', 'description' => 'Ver lista de semestres', 'module' => 'Semestres'],
+            ['name' => 'crear_semestres', 'description' => 'Crear nuevos semestres', 'module' => 'Semestres'],
+            ['name' => 'editar_semestres', 'description' => 'Editar semestres existentes', 'module' => 'Semestres'],
+            ['name' => 'eliminar_semestres', 'description' => 'Eliminar semestres', 'module' => 'Semestres'],
+
+            // Estadísticas
+            ['name' => 'ver_estadisticas', 'description' => 'Ver estadísticas generales', 'module' => 'Estadísticas'],
+            ['name' => 'ver_estadisticas_propias', 'description' => 'Ver solo estadísticas propias', 'module' => 'Estadísticas'],
+            ['name' => 'exportar_estadisticas', 'description' => 'Exportar reportes de estadísticas', 'module' => 'Estadísticas'],
+
             // Reportes
             ['name' => 'exportar_horarios', 'description' => 'Exportar horarios semanales', 'module' => 'Reportes'],
             ['name' => 'exportar_asistencias', 'description' => 'Exportar reportes de asistencia', 'module' => 'Reportes'],
+            ['name' => 'ver_reportes', 'description' => 'Acceso a módulo de reportes', 'module' => 'Reportes'],
 
             // Sistema
             ['name' => 'acceso_dashboard', 'description' => 'Acceder al dashboard', 'module' => 'Sistema'],
             ['name' => 'gestionar_perfil', 'description' => 'Editar perfil propio', 'module' => 'Sistema'],
+            ['name' => 'importar_datos', 'description' => 'Importar datos masivos', 'module' => 'Sistema'],
         ];
 
         foreach ($permissions as $permission) {

@@ -118,8 +118,31 @@ public function edit(Materia $materia)
     }    /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Materia $materia)
     {
-        //
+        try {
+            // Verificar si la materia tiene grupos asociados
+            $gruposCount = $materia->grupos()->count();
+            
+            if ($gruposCount > 0) {
+                return back()->withErrors([
+                    'error' => "❌ No puedes eliminar esta materia porque tiene {$gruposCount} grupo(s) asociado(s). Debes eliminar primero los grupos."
+                ]);
+            }
+
+            // Desvincular las carreras antes de eliminar
+            $materia->carreras()->detach();
+
+            // Eliminar la materia
+            $materia->delete();
+
+            return redirect()->route('materias.index')
+                ->with('status', '✅ ¡Materia eliminada exitosamente!');
+
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => 'Error al eliminar la materia: ' . $e->getMessage()
+            ]);
+        }
     }
 }

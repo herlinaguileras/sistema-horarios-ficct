@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
-use App\Models\Permission;
+use App\Models\RoleModule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -15,7 +15,7 @@ class RoleController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Role::withCount(['users', 'permissions']);
+        $query = Role::withCount(['users', 'modules']);
 
         // Búsqueda
         if ($request->filled('search')) {
@@ -40,14 +40,14 @@ class RoleController extends Controller
     }
 
     /**
-     * Muestra el formulario para crear un nuevo rol.
+     * Muestra el formulario para crear un nuevo rol
      */
     public function create()
     {
-        // Cargar todos los permisos agrupados por módulo
-        $permissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
+        // Obtener módulos disponibles del sistema
+        $modules = RoleModule::availableModules();
         
-        return view('roles.create', compact('permissions'));
+        return view('roles.create', compact('modules'));
     }
 
     /**
@@ -63,15 +63,15 @@ class RoleController extends Controller
                 'unique:roles',
                 'regex:/^[a-z0-9_-]+$/'
             ],
-            'description' => ['nullable', 'string', 'max:500'],
-            'level' => ['required', 'integer', 'min:1', 'max:100'],
-            'status' => ['required', 'in:Activo,Inactivo'],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['exists:permissions,id'],
+            'description' => ['required', 'string', 'max:500'],
+            'modules' => ['required', 'array', 'min:1'],
+            'modules.*' => ['string'],
         ], [
             'name.regex' => 'El nombre solo puede contener letras minúsculas, números, guiones y guiones bajos.',
             'name.unique' => 'Ya existe un rol con este nombre.',
-            'description.max' => 'La descripción no puede exceder 500 caracteres.',
+            'description.required' => 'La descripción es obligatoria.',
+            'modules.required' => 'Debes seleccionar al menos un módulo.',
+            'modules.min' => 'Debes seleccionar al menos un módulo.',
         ]);
 
         try {
@@ -80,20 +80,22 @@ class RoleController extends Controller
             // Crear el rol
             $role = Role::create([
                 'name' => $validated['name'],
-                'description' => $validated['description'] ?? null,
-                'level' => $validated['level'],
-                'status' => $validated['status'],
+                'description' => $validated['description'],
+                'level' => 10, // Nivel por defecto para roles personalizados
+                'status' => 'Activo',
             ]);
 
-            // Sincronizar permisos
-            if (!empty($validated['permissions'])) {
-                $role->permissions()->sync($validated['permissions']);
+            // Crear los módulos del rol
+            foreach ($validated['modules'] as $moduleName) {
+                $role->modules()->create([
+                    'module_name' => $moduleName
+                ]);
             }
 
             DB::commit();
 
             return redirect()->route('roles.index')
-                ->with('status', '✅ ¡Rol creado exitosamente!');
+                ->with('status', 'Rol creado exitosamente con ' . count($validated['modules']) . ' módulo(s)');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -108,13 +110,13 @@ class RoleController extends Controller
      */
     public function edit(Role $role)
     {
-        // Eager loading de relaciones
-        $role->load(['users', 'permissions']);
-        
-        // Cargar todos los permisos agrupados por módulo
-        $permissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
+        // Eager loading de módulos
+        $role->load(['users', 'modules']);
 
-        return view('roles.edit', compact('role', 'permissions'));
+        // Obtener módulos disponibles del sistema
+        $modules = RoleModule::availableModules();
+
+        return view('roles.edit', compact('role', 'modules'));
     }
 
     /**
@@ -153,8 +155,16 @@ class RoleController extends Controller
                 'status' => $validated['status'],
             ]);
 
-            // Sincronizar permisos
-            $role->permissions()->sync($validated['permissions'] ?? []);
+            // Sincronizar módulos (eliminar los antiguos y crear los nuevos)
+            $role->modules()->delete();
+
+            if (isset($validated['modules'])) {
+                foreach ($validated['modules'] as $moduleName) {
+                    $role->modules()->create([
+                        'module_name' => $moduleName,
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -190,9 +200,9 @@ class RoleController extends Controller
         }
 
         try {
-            // Desvincular permisos antes de eliminar
-            $role->permissions()->detach();
-            
+            // Eliminar módulos asociados antes de eliminar el rol
+            $role->modules()->delete();
+
             // Eliminar el rol
             $role->delete();
 

@@ -24,6 +24,15 @@ protected $fillable = [
 
 
     /**
+     * Mutator para forzar que el estado siempre esté en minúsculas.
+     * Previene inconsistencias en la BD.
+     */
+    public function setEstadoAttribute($value)
+    {
+        $this->attributes['estado'] = strtolower($value);
+    }
+
+    /**
      * Un registro de asistencia pertenece a un Horario específico.
      */
     public function horario()

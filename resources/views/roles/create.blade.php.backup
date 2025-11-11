@@ -1,0 +1,248 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">
+            {{ __('Crear Nuevo Rol') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    <form method="POST" action="{{ route('roles.store') }}">
+                        @csrf
+
+                        <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
+                            {{-- Nombre del Rol --}}
+                            <div>
+                                <label for="name" class="block mb-2 text-sm font-medium text-gray-700">
+                                    Nombre del Rol <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text"
+                                       name="name"
+                                       id="name"
+                                       value="{{ old('name') }}"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('name') border-red-500 @enderror"
+                                       placeholder="ej: coordinador, secretaria">
+                                @error('name')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-gray-500">Usa minúsculas sin espacios (ej: supervisor, coordinador)</p>
+                            </div>
+
+                            {{-- Nivel --}}
+                            <div>
+                                <label for="level" class="block mb-2 text-sm font-medium text-gray-700">
+                                    Nivel <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number"
+                                       name="level"
+                                       id="level"
+                                       value="{{ old('level', 10) }}"
+                                       min="1"
+                                       max="100"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('level') border-red-500 @enderror">
+                                @error('level')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-gray-500">Mayor nivel = mayor jerarquía (admin=100)</p>
+                            </div>
+                        </div>
+
+                        {{-- Descripción --}}
+                        <div class="mb-6">
+                            <label for="description" class="block mb-2 text-sm font-medium text-gray-700">
+                                Descripción
+                            </label>
+                            <textarea name="description"
+                                      id="description"
+                                      rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('description') border-red-500 @enderror"
+                                      placeholder="Describe las responsabilidades de este rol...">{{ old('description') }}</textarea>
+                            @error('description')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Estado --}}
+                        <div class="mb-6">
+                            <label for="status" class="block mb-2 text-sm font-medium text-gray-700">
+                                Estado <span class="text-red-500">*</span>
+                            </label>
+                            <select name="status"
+                                    id="status"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('status') border-red-500 @enderror"
+                                    required>
+                                <option value="Activo" {{ old('status', 'Activo') === 'Activo' ? 'selected' : '' }}>Activo</option>
+                                <option value="Inactivo" {{ old('status') === 'Inactivo' ? 'selected' : '' }}>Inactivo</option>
+                            </select>
+                            @error('status')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Permisos del Rol --}}
+                        <div class="mb-6">
+                            <label class="block mb-3 text-sm font-medium text-gray-700">
+                                Módulos y Permisos del Rol
+                            </label>
+                            <p class="mb-3 text-sm text-gray-600">
+                                💡 <strong>Importante:</strong> Selecciona los módulos que aparecerán en el dashboard. Para cada módulo, elige qué acciones puede realizar.
+                            </p>
+                            <div class="p-4 border border-gray-300 rounded-md bg-gray-50">
+                                @if($permissions->isEmpty())
+                                    <p class="text-sm text-gray-500">No hay permisos disponibles. <a href="#" class="text-blue-600 hover:underline">Ejecuta el seeder de permisos</a>.</p>
+                                @else
+                                    {{-- Agrupar permisos por módulo con mejor UX --}}
+                                    @php
+                                        $modulosConDashboard = ['Usuarios', 'Roles', 'Docentes', 'Materias', 'Aulas', 'Grupos', 'Semestres', 'Horarios', 'Estadísticas'];
+                                        $iconos = [
+                                            'Usuarios' => '👥',
+                                            'Roles' => '🛡️',
+                                            'Docentes' => '👨‍🏫',
+                                            'Materias' => '📚',
+                                            'Aulas' => '🏫',
+                                            'Grupos' => '👥',
+                                            'Semestres' => '📅',
+                                            'Horarios' => '🕐',
+                                            'Estadísticas' => '📊',
+                                            'Asistencias' => '✅',
+                                            'Reportes' => '📄',
+                                            'Sistema' => '⚙️',
+                                            'Permisos' => '🔐',
+                                        ];
+                                        $colores = [
+                                            'Usuarios' => 'bg-pink-50 border-pink-200',
+                                            'Roles' => 'bg-gray-50 border-gray-200',
+                                            'Docentes' => 'bg-blue-50 border-blue-200',
+                                            'Materias' => 'bg-green-50 border-green-200',
+                                            'Aulas' => 'bg-red-50 border-red-200',
+                                            'Grupos' => 'bg-yellow-50 border-yellow-200',
+                                            'Semestres' => 'bg-teal-50 border-teal-200',
+                                            'Horarios' => 'bg-indigo-50 border-indigo-200',
+                                            'Estadísticas' => 'bg-purple-50 border-purple-200',
+                                            'Asistencias' => 'bg-emerald-50 border-emerald-200',
+                                            'Reportes' => 'bg-orange-50 border-orange-200',
+                                            'Sistema' => 'bg-slate-50 border-slate-200',
+                                            'Permisos' => 'bg-cyan-50 border-cyan-200',
+                                        ];
+                                    @endphp
+
+                                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        @foreach($permissions as $module => $modulePermissions)
+                                            @php
+                                                $moduleId = str_replace(' ', '_', strtolower($module));
+                                                $tieneVerPermiso = $modulePermissions->contains(function($p) {
+                                                    return str_starts_with($p->name, 'ver_');
+                                                });
+                                                $estaEnDashboard = in_array($module, $modulosConDashboard);
+                                            @endphp
+
+                                            <div class="p-4 border-2 rounded-lg {{ $colores[$module] ?? 'bg-gray-50 border-gray-200' }}">
+                                                {{-- Encabezado del módulo con checkbox "Seleccionar Todo" --}}
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="text-2xl">{{ $iconos[$module] ?? '📦' }}</span>
+                                                        <h4 class="text-base font-bold text-gray-800">{{ $module }}</h4>
+                                                        @if($estaEnDashboard && $tieneVerPermiso)
+                                                            <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                                                                📌 Dashboard
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    <label class="flex items-center space-x-2 cursor-pointer">
+                                                        <input type="checkbox"
+                                                               class="module-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                               data-module="{{ $moduleId }}"
+                                                               onchange="toggleModulePermissions('{{ $moduleId }}', this.checked)">
+                                                        <span class="text-xs font-semibold text-gray-600">Todo</span>
+                                                    </label>
+                                                </div>
+
+                                                {{-- Permisos individuales del módulo --}}
+                                                <div class="space-y-2">
+                                                    @foreach($modulePermissions as $permission)
+                                                        <label class="flex items-center space-x-2 cursor-pointer hover:bg-white hover:bg-opacity-50 p-1 rounded">
+                                                            <input type="checkbox"
+                                                                   name="permissions[]"
+                                                                   value="{{ $permission->id }}"
+                                                                   class="permission-checkbox permission-{{ $moduleId }} w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                   {{ in_array($permission->id, old('permissions', [])) ? 'checked' : '' }}
+                                                                   onchange="updateModuleCheckbox('{{ $moduleId }}')">
+                                                            <span class="text-sm text-gray-700">
+                                                                @if(str_starts_with($permission->name, 'ver_'))
+                                                                    👁️
+                                                                @elseif(str_starts_with($permission->name, 'crear_'))
+                                                                    ➕
+                                                                @elseif(str_starts_with($permission->name, 'editar_'))
+                                                                    ✏️
+                                                                @elseif(str_starts_with($permission->name, 'eliminar_'))
+                                                                    🗑️
+                                                                @elseif(str_contains($permission->name, 'exportar'))
+                                                                    📥
+                                                                @else
+                                                                    ⚡
+                                                                @endif
+                                                                {{ $permission->description }}
+                                                            </span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                            @error('permissions')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- JavaScript para manejar los checkboxes --}}
+                        <script>
+                            function toggleModulePermissions(moduleId, checked) {
+                                const checkboxes = document.querySelectorAll('.permission-' + moduleId);
+                                checkboxes.forEach(checkbox => {
+                                    checkbox.checked = checked;
+                                });
+                            }
+
+                            function updateModuleCheckbox(moduleId) {
+                                const checkboxes = document.querySelectorAll('.permission-' + moduleId);
+                                const moduleCheckbox = document.querySelector('[data-module="' + moduleId + '"]');
+
+                                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                                const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+                                moduleCheckbox.checked = allChecked;
+                                moduleCheckbox.indeterminate = !allChecked && someChecked;
+                            }
+
+                            // Inicializar estados al cargar la página
+                            document.addEventListener('DOMContentLoaded', function() {
+                                document.querySelectorAll('.module-checkbox').forEach(moduleCheckbox => {
+                                    const moduleId = moduleCheckbox.getAttribute('data-module');
+                                    updateModuleCheckbox(moduleId);
+                                });
+                            });
+                        </script>
+
+                        {{-- Botones --}}
+                        <div class="flex items-center justify-end gap-4 pt-4 border-t">
+                            <a href="{{ route('roles.index') }}"
+                               class="px-4 py-2 font-bold text-gray-800 bg-gray-300 rounded hover:bg-gray-400">
+                                Cancelar
+                            </a>
+                            <button type="submit"
+                                    class="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700">
+                                💾 Crear Rol
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

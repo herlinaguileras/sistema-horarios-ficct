@@ -138,27 +138,71 @@
                                             </td>
                                             <td class="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
                                                 <div class="flex items-center justify-end gap-3">
+                                                    {{-- Botón Activar (solo si NO es activo) --}}
                                                     @if(!$semestre->isActivo())
                                                         <form method="POST" action="{{ route('semestres.toggle-activo', $semestre) }}" class="inline">
                                                             @csrf
                                                             @method('PATCH')
                                                             <button type="submit" 
+                                                                    title="Activar este semestre"
                                                                     class="text-green-600 hover:text-green-900 transition">
+                                                                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
                                                                 Activar
                                                             </button>
                                                         </form>
                                                     @endif
+
+                                                    {{-- Botón Editar --}}
                                                     <a href="{{ route('semestres.edit', $semestre) }}" 
+                                                       title="Editar semestre"
                                                        class="text-indigo-600 hover:text-indigo-900 transition">
+                                                        <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
                                                         Editar
                                                     </a>
-                                                    @if(!$semestre->isActivo() && $semestre->grupos()->count() === 0)
-                                                        <form method="POST" action="{{ route('semestres.destroy', $semestre) }}" 
-                                                              onsubmit="return confirm('¿Estás seguro de eliminar este semestre?');" 
+
+                                                    {{-- Botón Eliminar (con validaciones) --}}
+                                                    @if($semestre->isActivo())
+                                                        {{-- Semestre activo: no se puede eliminar --}}
+                                                        <button type="button" 
+                                                                disabled
+                                                                title="No se puede eliminar el semestre activo"
+                                                                class="text-gray-400 cursor-not-allowed"
+                                                                onclick="alert('⚠️ No se puede eliminar el semestre activo.\n\nCambia su estado a Planificación o Terminado primero.')">
+                                                            <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                            Eliminar
+                                                        </button>
+                                                    @elseif($semestre->grupos()->count() > 0)
+                                                        {{-- Tiene grupos: no se puede eliminar --}}
+                                                        <button type="button" 
+                                                                disabled
+                                                                title="No se puede eliminar: tiene {{ $semestre->grupos()->count() }} grupo(s) asociado(s)"
+                                                                class="text-gray-400 cursor-not-allowed"
+                                                                onclick="alert('⚠️ No se puede eliminar este semestre.\n\nTiene {{ $semestre->grupos()->count() }} grupo(s) asociado(s).\nElimina primero los grupos o reasígnalos a otro semestre.')">
+                                                            <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                            Eliminar
+                                                        </button>
+                                                    @else
+                                                        {{-- Se puede eliminar --}}
+                                                        <form method="POST" 
+                                                              action="{{ route('semestres.destroy', $semestre) }}" 
+                                                              onsubmit="return confirm('⚠️ ¿Estás seguro de eliminar el semestre \"{{ $semestre->nombre }}\"?\n\nEsta acción no se puede deshacer.');" 
                                                               class="inline">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="text-red-600 hover:text-red-900 transition">
+                                                            <button type="submit" 
+                                                                    title="Eliminar semestre"
+                                                                    class="text-red-600 hover:text-red-900 transition">
+                                                                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
                                                                 Eliminar
                                                             </button>
                                                         </form>
@@ -179,16 +223,24 @@
                                     </svg>
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm text-blue-800">
-                                        <strong>ℹ️ Estados del semestre:</strong>
+                                    <p class="text-sm font-semibold text-blue-800">
+                                        ℹ️ Estados del semestre:
                                     </p>
-                                    <ul class="mt-2 text-sm text-blue-700 list-disc list-inside">
+                                    <ul class="mt-2 text-sm text-blue-700 list-disc list-inside space-y-1">
                                         <li><strong>Planificación:</strong> Semestre en preparación, aún no ha comenzado</li>
-                                        <li><strong>Activo:</strong> Semestre en curso (solo uno puede estar activo)</li>
+                                        <li><strong>Activo:</strong> Semestre en curso (solo uno puede estar activo a la vez)</li>
                                         <li><strong>Terminado:</strong> Semestre finalizado</li>
                                     </ul>
-                                    <p class="mt-2 text-sm text-blue-800">
-                                        El semestre activo es el que se muestra en el Dashboard y en los reportes.
+                                    <p class="mt-3 text-sm font-semibold text-blue-800">
+                                        🗑️ Condiciones para eliminar un semestre:
+                                    </p>
+                                    <ul class="mt-2 text-sm text-blue-700 list-disc list-inside space-y-1">
+                                        <li>El semestre <strong>NO</strong> debe estar en estado "Activo"</li>
+                                        <li>El semestre <strong>NO</strong> debe tener grupos asociados</li>
+                                        <li>Si tiene grupos, primero elimínalos o reasígnalos a otro semestre</li>
+                                    </ul>
+                                    <p class="mt-3 text-sm text-blue-800">
+                                        💡 El semestre activo es el que se muestra en el Dashboard y en los reportes.
                                     </p>
                                 </div>
                             </div>

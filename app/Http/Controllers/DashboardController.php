@@ -218,7 +218,7 @@ public function index(Request $request)
     }
 
     /**
-     * Custom Role Dashboard Logic (based on permissions)
+     * Custom Role Dashboard Logic (based on modules)
      */
     private function customRoleDashboard(Request $request, $user)
     {
@@ -229,12 +229,25 @@ public function index(Request $request)
             return view('dashboard-default');
         }
 
-        // Obtener todos los permisos del rol
-        $permissions = $role->permissions;
+        // Obtener todos los módulos del rol
+        $modules = $role->modules()->get();
+
+        // Obtener información completa de cada módulo
+        $availableModules = \App\Models\RoleModule::availableModules();
+        $userModules = [];
+
+        foreach ($modules as $module) {
+            if (isset($availableModules[$module->module_name])) {
+                $userModules[] = array_merge(
+                    ['key' => $module->module_name],
+                    $availableModules[$module->module_name]
+                );
+            }
+        }
 
         return view('dashboards.custom-role', [
             'role' => $role,
-            'permissions' => $permissions,
+            'modules' => $userModules,
             'user' => $user
         ]);
     }

@@ -17,6 +17,15 @@
                 </div>
             @endif
 
+            {{-- Mensaje de error --}}
+            @if (session('error'))
+                <div class="mb-4 overflow-hidden bg-red-100 border border-red-400 rounded shadow-sm">
+                    <div class="px-4 py-3 text-red-700">
+                        {{ session('error') }}
+                    </div>
+                </div>
+            @endif
+
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-end mb-4">
@@ -76,7 +85,9 @@
                                             <div class="flex justify-end gap-2">
                                                 <a href="{{ route('docentes.edit', $docente) }}" class="text-indigo-600 hover:text-indigo-900">Editar</a>
                                                 <form method="POST" action="{{ route('docentes.destroy', $docente) }}" 
-                                                      onsubmit="return confirm('¿Estás seguro de eliminar este docente? Esta acción también eliminará su cuenta de usuario.');" 
+                                                      onsubmit="return confirm('{{ $docente->grupos()->count() > 0 
+                                                          ? '⚠️ ADVERTENCIA: Este docente tiene ' . $docente->grupos()->count() . ' grupo(s) asignado(s). No podrá eliminarse hasta que reasignes o elimines esos grupos. ¿Deseas continuar para ver el mensaje detallado?' 
+                                                          : '¿Estás seguro de eliminar este docente? Esta acción también eliminará su cuenta de usuario.' }}');" 
                                                       class="inline">
                                                     @csrf
                                                     @method('DELETE')

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('permission_role', function (Blueprint $table) {
+        Schema::create('role_modules', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('permission_id')->constrained()->onDelete('cascade');
-            $table->foreignId('role_id')->constrained()->onDelete('cascade');
+            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
+            $table->string('module_name'); // usuarios, roles, docentes, materias, etc.
             $table->timestamps();
 
-            // Evitar duplicados
-            $table->unique(['permission_id', 'role_id']);
+            // Un rol no puede tener el mismo módulo duplicado
+            $table->unique(['role_id', 'module_name']);
         });
     }
 
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('permission_role');
+        Schema::dropIfExists('role_modules');
     }
 };

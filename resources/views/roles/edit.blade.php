@@ -94,41 +94,72 @@
                             @enderror
                         </div>
 
-                        {{-- Permisos del Rol --}}
+                        {{-- Módulos del Rol --}}
                         <div class="mb-6">
                             <label class="block mb-3 text-sm font-medium text-gray-700">
-                                Permisos del Rol
+                                Módulos del Sistema <span class="text-red-500">*</span>
                             </label>
+                            <p class="mb-3 text-sm text-gray-600">
+                                💡 <strong>Importante:</strong> Selecciona los módulos a los que este rol tendrá acceso completo (ver, crear, editar, eliminar).
+                            </p>
                             <div class="p-4 border border-gray-300 rounded-md bg-gray-50">
-                                @if($permissions->isEmpty())
-                                    <p class="text-sm text-gray-500">No hay permisos disponibles. <a href="#" class="text-blue-600 hover:underline">Ejecuta el seeder de permisos</a>.</p>
-                                @else
-                                    {{-- Agrupar permisos por módulo --}}
-                                    @foreach($permissions as $module => $modulePermissions)
-                                        <div class="mb-4">
-                                            <h4 class="mb-2 text-sm font-semibold text-gray-700">📦 {{ $module }}</h4>
-                                            <div class="grid grid-cols-1 gap-2 pl-4 md:grid-cols-2 lg:grid-cols-3">
-                                                @foreach($modulePermissions as $permission)
-                                                    <label class="flex items-center space-x-2">
-                                                        <input type="checkbox"
-                                                               name="permissions[]"
-                                                               value="{{ $permission->id }}"
-                                                               {{ in_array($permission->id, old('permissions', $role->permissions->pluck('id')->toArray())) ? 'checked' : '' }}
-                                                               class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                                        <span class="text-sm text-gray-700">{{ $permission->description }}</span>
-                                                    </label>
-                                                @endforeach
+                                @php
+                                    $iconos = [
+                                        'usuarios' => '👥',
+                                        'roles' => '🛡️',
+                                        'docentes' => '👨‍🏫',
+                                        'materias' => '📚',
+                                        'aulas' => '🏫',
+                                        'grupos' => '👥',
+                                        'semestres' => '📅',
+                                        'horarios' => '🕐',
+                                        'importacion' => '📤',
+                                        'estadisticas' => '�',
+                                    ];
+                                    $colores = [
+                                        'usuarios' => 'bg-pink-50 border-pink-200',
+                                        'roles' => 'bg-gray-50 border-gray-200',
+                                        'docentes' => 'bg-blue-50 border-blue-200',
+                                        'materias' => 'bg-green-50 border-green-200',
+                                        'aulas' => 'bg-red-50 border-red-200',
+                                        'grupos' => 'bg-yellow-50 border-yellow-200',
+                                        'semestres' => 'bg-teal-50 border-teal-200',
+                                        'horarios' => 'bg-indigo-50 border-indigo-200',
+                                        'importacion' => 'bg-cyan-50 border-cyan-200',
+                                        'estadisticas' => 'bg-purple-50 border-purple-200',
+                                    ];
+                                    $selectedModules = old('modules', $role->modules->pluck('module_name')->toArray());
+                                @endphp
+
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    @foreach($modules as $moduleKey => $moduleInfo)
+                                        <label class="flex items-start p-4 space-x-3 border-2 rounded-lg cursor-pointer transition-all {{ $colores[$moduleKey] ?? 'bg-gray-50 border-gray-200' }} hover:shadow-md {{ in_array($moduleKey, $selectedModules) ? 'ring-2 ring-blue-400' : '' }}">
+                                            <input type="checkbox"
+                                                   name="modules[]"
+                                                   value="{{ $moduleKey }}"
+                                                   class="w-5 h-5 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                   {{ in_array($moduleKey, $selectedModules) ? 'checked' : '' }}>
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-1">
+                                                    <span class="text-2xl">{{ $iconos[$moduleKey] ?? '📦' }}</span>
+                                                    <span class="font-bold text-gray-800">{{ $moduleInfo['name'] }}</span>
+                                                </div>
+                                                <p class="text-xs text-gray-600">{{ $moduleInfo['description'] }}</p>
+                                                <div class="mt-2 flex flex-wrap gap-1">
+                                                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">👁️ Ver</span>
+                                                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">➕ Crear</span>
+                                                    <span class="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded">✏️ Editar</span>
+                                                    <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">🗑️ Eliminar</span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </label>
                                     @endforeach
-                                @endif
+                                </div>
                             </div>
-                            @error('permissions')
+                            @error('modules')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
-                        </div>
-
-                        {{-- Información de usuarios --}}
+                        </div>                        {{-- Información de usuarios --}}
                         @if($role->users->count() > 0)
                             <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <h4 class="font-semibold text-blue-900 mb-2">

@@ -13,7 +13,7 @@
 
             {{-- Resumen General del Docente --}}
             <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-4">
-                <div class="overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow">
+                <div class="overflow-hidden rounded-lg shadow bg-gradient-to-br from-blue-500 to-blue-600">
                     <div class="p-5 text-white">
                         <div class="flex items-center justify-between">
                             <div>
@@ -27,7 +27,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-hidden bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow">
+                <div class="overflow-hidden rounded-lg shadow bg-gradient-to-br from-green-500 to-green-600">
                     <div class="p-5 text-white">
                         <div class="flex items-center justify-between">
                             <div>
@@ -41,7 +41,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow">
+                <div class="overflow-hidden rounded-lg shadow bg-gradient-to-br from-purple-500 to-purple-600">
                     <div class="p-5 text-white">
                         <div class="flex items-center justify-between">
                             <div>
@@ -55,13 +55,13 @@
                     </div>
                 </div>
 
-                <div class="overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow">
+                <div class="overflow-hidden rounded-lg shadow bg-gradient-to-br from-orange-500 to-orange-600">
                     <div class="p-5 text-white">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-orange-100">Promedio Asistencia</p>
                                 <p class="text-3xl font-bold">{{ number_format($promedioAsistenciaDocente, 0) }}%</p>
-                                <p class="text-xs text-orange-100 mt-1">{{ $totalClasesDictadas }} de {{ $clasesEsperadasTotal }} clases</p>
+                                <p class="mt-1 text-xs text-orange-100">{{ $totalClasesDictadas }} de {{ $clasesEsperadasTotal }} clases</p>
                             </div>
                             <svg class="w-12 h-12 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />

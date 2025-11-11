@@ -188,6 +188,14 @@ public function create()
      */
     public function destroy(Docente $docente)
     {
+        // Verificar si el docente tiene grupos asignados
+        $gruposCount = $docente->grupos()->count();
+        
+        if ($gruposCount > 0) {
+            return redirect()->route('docentes.index')
+                ->with('error', "❌ No se puede eliminar el docente porque tiene {$gruposCount} grupo(s) asignado(s). Por favor, reasigna o elimina los grupos primero.");
+        }
+        
         DB::transaction(function () use ($docente) {
             // Guardamos el nombre para el mensaje
             $nombre = $docente->user->name;
@@ -195,16 +203,23 @@ public function create()
             // 1. Eliminamos los títulos asociados
             $docente->titulos()->delete();
             
-            // 2. Desvinculamos el rol de docente del usuario
+            // 2. Eliminamos los horarios de los grupos (si hubiera alguno sin eliminar)
+            // Esto es por precaución aunque no debería haber grupos a esta altura
+            foreach ($docente->grupos as $grupo) {
+                $grupo->horarios()->delete();
+                $grupo->delete();
+            }
+            
+            // 3. Desvinculamos el rol de docente del usuario
             $docenteRole = Role::where('name', 'docente')->first();
             if ($docenteRole) {
                 $docente->user->roles()->detach($docenteRole->id);
             }
             
-            // 3. Eliminamos el perfil de docente
+            // 4. Eliminamos el perfil de docente
             $docente->delete();
             
-            // 4. Eliminamos el usuario asociado
+            // 5. Eliminamos el usuario asociado
             $docente->user->delete();
         });
         

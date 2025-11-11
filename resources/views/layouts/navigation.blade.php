@@ -67,6 +67,12 @@
                     </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('horarios.import')" :active="request()->routeIs('horarios.import*')">
+                            {{ __('Importar Horarios') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
                             {{ __('Estadísticas') }}
                         </x-nav-link>
@@ -75,6 +81,91 @@
                 @endif
                 {{-- === END ADMIN LINKS === --}}
 
+                {{-- === START CUSTOM ROLE LINKS (based on modules) === --}}
+                @if(Auth::user() && !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('docente'))
+
+                    @if(Auth::user()->hasModule('usuarios'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                                {{ __('Usuarios') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('roles'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.*')">
+                                {{ __('Roles') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('docentes'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('docentes.index')" :active="request()->routeIs('docentes.*')">
+                                {{ __('Docentes') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('materias'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('materias.index')" :active="request()->routeIs('materias.*')">
+                                {{ __('Materias') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('aulas'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('aulas.index')" :active="request()->routeIs('aulas.*')">
+                                {{ __('Aulas') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('grupos'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('grupos.index')" :active="request()->routeIs('grupos.*')">
+                                {{ __('Grupos') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('semestres'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('semestres.index')" :active="request()->routeIs('semestres.*')">
+                                {{ __('Semestres') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('horarios'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('horarios.index')" :active="request()->routeIs('horarios.*')">
+                                {{ __('Horarios') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('horarios'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('horarios.import')" :active="request()->routeIs('horarios.import*')">
+                                {{ __('Importar Horarios') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                    @if(Auth::user()->hasModule('estadisticas'))
+                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <x-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
+                                {{ __('Estadísticas') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
+
+                @endif
+                {{-- === END CUSTOM ROLE LINKS === --}}
                 {{-- === START DOCENTE LINKS === --}}
                 @if(Auth::user() && Auth::user()->hasRole('docente'))
 
@@ -171,11 +262,80 @@
                 <x-responsive-nav-link :href="route('horarios.index')" :active="request()->routeIs('horarios.*', 'horarios.asistencias.*')">
                     {{ __('Horarios') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('horarios.import')" :active="request()->routeIs('horarios.import*')">
+                    {{ __('Importar Horarios') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
                     {{ __('Estadísticas') }}
                 </x-responsive-nav-link>
             @endif
              {{-- === END RESPONSIVE ADMIN LINKS === --}}
+
+             {{-- === START RESPONSIVE CUSTOM ROLE LINKS === --}}
+            @if(Auth::user() && !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('docente'))
+
+                @if(Auth::user()->hasModule('usuarios'))
+                    <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                        {{ __('Usuarios') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('roles'))
+                    <x-responsive-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.*')">
+                        {{ __('Roles') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('docentes'))
+                    <x-responsive-nav-link :href="route('docentes.index')" :active="request()->routeIs('docentes.*')">
+                        {{ __('Docentes') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('materias'))
+                    <x-responsive-nav-link :href="route('materias.index')" :active="request()->routeIs('materias.*')">
+                        {{ __('Materias') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('aulas'))
+                    <x-responsive-nav-link :href="route('aulas.index')" :active="request()->routeIs('aulas.*')">
+                        {{ __('Aulas') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('grupos'))
+                    <x-responsive-nav-link :href="route('grupos.index')" :active="request()->routeIs('grupos.*')">
+                        {{ __('Grupos') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('semestres'))
+                    <x-responsive-nav-link :href="route('semestres.index')" :active="request()->routeIs('semestres.*')">
+                        {{ __('Semestres') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('horarios'))
+                    <x-responsive-nav-link :href="route('horarios.index')" :active="request()->routeIs('horarios.*')">
+                        {{ __('Horarios') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('horarios'))
+                    <x-responsive-nav-link :href="route('horarios.import')" :active="request()->routeIs('horarios.import*')">
+                        {{ __('Importar Horarios') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(Auth::user()->hasModule('estadisticas'))
+                    <x-responsive-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
+                        {{ __('Estadísticas') }}
+                    </x-responsive-nav-link>
+                @endif
+
+            @endif
+             {{-- === END RESPONSIVE CUSTOM ROLE LINKS === --}}
 
              {{-- === START RESPONSIVE DOCENTE LINKS === --}}
             @if(Auth::user() && Auth::user()->hasRole('docente'))

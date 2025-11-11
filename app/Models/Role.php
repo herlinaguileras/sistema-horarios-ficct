@@ -39,22 +39,32 @@ class Role extends Model
     }
 
     /**
-     * Los permisos que tiene este rol
+     * Los módulos asignados a este rol
      */
-    public function permissions()
+    public function modules()
     {
-        return $this->belongsToMany(Permission::class, 'permission_role');
+        return $this->hasMany(RoleModule::class);
     }
 
     /**
-     * Verificar si el rol tiene un permiso específico
+     * Verificar si el rol tiene acceso a un módulo específico
      *
-     * @param string $permissionName
+     * @param string $moduleName
      * @return bool
      */
-    public function hasPermission(string $permissionName): bool
+    public function hasModule(string $moduleName): bool
     {
-        return $this->permissions()->where('name', $permissionName)->exists();
+        return $this->modules()->where('module_name', $moduleName)->exists();
+    }
+
+    /**
+     * Obtener nombres de todos los módulos del rol
+     *
+     * @return array
+     */
+    public function getModuleNames(): array
+    {
+        return $this->modules()->pluck('module_name')->toArray();
     }
 
     /**

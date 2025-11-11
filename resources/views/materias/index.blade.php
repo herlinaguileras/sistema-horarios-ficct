@@ -17,6 +17,15 @@
                     </div>
                 @endif
 
+                {{-- Mensaje de error --}}
+                @if ($errors->any())
+                    <div class="inline-block w-full p-4 mb-4 text-base text-red-700 bg-red-100 rounded-lg" role="alert">
+                        @foreach ($errors->all() as $error)
+                            <p>{{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
+
                     {{-- Botón para ir al formulario de creación --}}
                     <div class="flex justify-end mb-4">
                         <a href="{{ route('materias.create') }}" class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-gray-800 border border-transparent rounded-md hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25">
@@ -32,9 +41,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <input type="text" 
-                                   id="searchInput" 
-                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                            <input type="text"
+                                   id="searchInput"
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                    placeholder="Buscar por nombre, sigla, nivel o carrera..."
                                    autocomplete="off">
                         </div>
@@ -70,11 +79,11 @@
                                         <td class="px-6 py-4">
                                             <div class="flex flex-wrap gap-1">
                                                 @forelse($materia->carreras as $carrera)
-                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                                        @if($carrera->codigo === 'SIS') bg-blue-100 text-blue-800
-                                                        @elseif($carrera->codigo === 'INF') bg-green-100 text-green-800
-                                                        @elseif($carrera->codigo === 'RED') bg-purple-100 text-purple-800
-                                                        @elseif($carrera->codigo === 'ROB') bg-orange-100 text-orange-800
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                                        @if($carrera->codigo === 'SIS') bg-red-100 text-red-800
+                                                        @elseif($carrera->codigo === 'INF') bg-blue-100 text-blue-800
+                                                        @elseif($carrera->codigo === 'RED') bg-orange-100 text-orange-800
+                                                        @elseif($carrera->codigo === 'ROB') bg-purple-100 text-purple-800
                                                         @else bg-gray-100 text-gray-800
                                                         @endif">
                                                         {{ $carrera->codigo }}
@@ -85,7 +94,24 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                                            <a href="{{ route('materias.edit', $materia) }}" class="text-indigo-600 hover:text-indigo-900">Editar</a>
+                                            <div class="flex items-center justify-end gap-3">
+                                                <a href="{{ route('materias.edit', $materia) }}" 
+                                                   class="text-indigo-600 hover:text-indigo-900">
+                                                    Editar
+                                                </a>
+                                                
+                                                <form action="{{ route('materias.destroy', $materia) }}" 
+                                                      method="POST" 
+                                                      class="inline-block"
+                                                      onsubmit="return confirm('¿Estás seguro de que deseas eliminar la materia {{ $materia->nombre }}? Esta acción no se puede deshacer.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" 
+                                                            class="text-red-600 hover:text-red-900">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -130,8 +156,8 @@
                             const nivel = row.getAttribute('data-nivel');
                             const carrera = row.getAttribute('data-carrera');
 
-                            const matches = nombre.includes(searchTerm) || 
-                                          sigla.includes(searchTerm) || 
+                            const matches = nombre.includes(searchTerm) ||
+                                          sigla.includes(searchTerm) ||
                                           nivel.includes(searchTerm) ||
                                           carrera.includes(searchTerm);
 

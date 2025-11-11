@@ -23,10 +23,8 @@ class EstadisticaController extends Controller
             return redirect()->route('estadisticas.show', $user->docente->id);
         }
 
-        // Solo admins pueden ver la lista de todos los docentes
-        if (!$user->hasRole('admin')) {
-            abort(403, 'No tienes permiso para acceder a esta página.');
-        }
+        // El middleware 'module:estadisticas' ya validó el acceso
+        // No necesitamos verificación adicional aquí
 
         // Obtener todos los docentes con sus relaciones
         $docentes = Docente::with(['user', 'grupos.materia', 'grupos.horarios'])
@@ -144,6 +142,16 @@ class EstadisticaController extends Controller
      */
     public function show(Docente $docente)
     {
+        $user = auth()->user();
+        
+        // Si el usuario es docente, solo puede ver sus propias estadísticas
+        if ($user->hasRole('docente')) {
+            // Verificar que el usuario autenticado es el dueño de estas estadísticas
+            if (!$user->docente || $user->docente->id !== $docente->id) {
+                abort(403, 'No tienes permiso para ver las estadísticas de otro docente.');
+            }
+        }
+        
         // Cargar relaciones necesarias
         $docente->load(['user', 'grupos.materia', 'grupos.semestre', 'grupos.horarios.aula', 'grupos.horarios.asistencias']);
 
