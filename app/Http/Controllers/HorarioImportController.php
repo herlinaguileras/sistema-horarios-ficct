@@ -15,9 +15,11 @@ use App\Models\Role;
 use App\Models\Semestre;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Exception;
+use App\Traits\LogsActivity;
 
 class HorarioImportController extends Controller
 {
+    use LogsActivity;
     /**
      * Mostrar formulario de importación
      */
@@ -103,6 +105,20 @@ class HorarioImportController extends Controller
             }
 
             DB::commit();
+
+            // Registrar importación exitosa en bitácora
+            $this->logImport(null, [
+                'total_filas' => $estadisticas['total'],
+                'exitosas' => $estadisticas['exitosas'],
+                'fallidas' => $estadisticas['fallidas'],
+                'omitidas' => $estadisticas['omitidas'],
+                'docentes_creados' => $estadisticas['docentes_creados'],
+                'materias_creadas' => $estadisticas['materias_creadas'],
+                'grupos_creados' => $estadisticas['grupos_creados'],
+                'aulas_creadas' => $estadisticas['aulas_creadas'],
+                'horarios_creados' => $estadisticas['horarios_creados'],
+                'archivo' => $archivo->getClientOriginalName(),
+            ]);
 
             return view('horarios.import-result', compact('estadisticas'));
 
@@ -272,7 +288,7 @@ class HorarioImportController extends Controller
 
         // PASO 2: Validar choques ANTES de crear los horarios
         $tieneErrores = false;
-        
+
         foreach ($horariosPendientes as $index => $horarioPendiente) {
             // Validación 1: Choque de AULA (misma aula ocupada en mismo horario)
             $choqueAula = $this->verificarChoqueAula(
@@ -320,7 +336,7 @@ class HorarioImportController extends Controller
             // Validación 4: Choque INTERNO (dentro de la misma fila del Excel)
             for ($j = 0; $j < $index; $j++) {
                 $otroHorario = $horariosPendientes[$j];
-                
+
                 // Mismo día
                 if ($otroHorario['dia'] === $horarioPendiente['dia']) {
                     // Verificar solapamiento de horas
@@ -331,7 +347,7 @@ class HorarioImportController extends Controller
                         // Mismo grupo no puede tener dos clases al mismo tiempo
                         $tieneErrores = true;
                         $resultado['errores_validacion'][] = "❌ CHOQUE INTERNO: {$horarioPendiente['dia_nombre']} - El grupo tiene dos horarios simultáneos ({$otroHorario['hora_texto']} y {$horarioPendiente['hora_texto']})";
-                        
+
                         // Misma aula no puede estar ocupada dos veces
                         if ($otroHorario['aula']->id === $horarioPendiente['aula']->id) {
                             $resultado['errores_validacion'][] = "❌ CHOQUE INTERNO AULA: {$horarioPendiente['dia_nombre']} - Aula {$horarioPendiente['aula_numero']} asignada dos veces ({$otroHorario['hora_texto']} y {$horarioPendiente['hora_texto']})";

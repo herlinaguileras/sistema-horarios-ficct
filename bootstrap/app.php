@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust all proxies for Railway deployment
         $middleware->trustProxies(at: '*');
 
+        // Registrar middleware de auditoría en el grupo web
+        $middleware->web(append: [
+            \App\Http\Middleware\AuditMiddleware::class,
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'module' => \App\Http\Middleware\CheckModule::class,

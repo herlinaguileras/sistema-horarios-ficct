@@ -13,6 +13,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\DocenteDashboardController;
+use App\Http\Controllers\AuditLogController;
 
 // Welcome Route - Redirect to login/dashboard
 Route::get('/', function () {
@@ -64,6 +65,15 @@ Route::middleware(['auth', 'verified'])->group(function () { // <-- START GROUP
         Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::patch('/roles/{role}/toggle-status', [RoleController::class, 'toggleStatus'])->name('roles.toggle-status');
         Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    });
+
+    // Gestión de Bitácora (requiere módulo 'bitacora' o rol admin)
+    Route::middleware(['module:bitacora'])->group(function() {
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/audit-logs/statistics', [AuditLogController::class, 'statistics'])->name('audit-logs.statistics');
+        Route::get('/audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+        Route::get('/audit-logs/{auditLog}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+        Route::post('/audit-logs/cleanup', [AuditLogController::class, 'cleanup'])->name('audit-logs.cleanup');
     });
 
     // Gestión Docentes (requiere módulo 'docentes')

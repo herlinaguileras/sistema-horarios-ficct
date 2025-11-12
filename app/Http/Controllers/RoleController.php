@@ -7,9 +7,11 @@ use App\Models\RoleModule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Traits\LogsActivity;
 
 class RoleController extends Controller
 {
+    use LogsActivity;
     /**
      * Muestra la lista de todos los roles.
      */
@@ -46,7 +48,7 @@ class RoleController extends Controller
     {
         // Obtener módulos disponibles del sistema
         $modules = RoleModule::availableModules();
-        
+
         return view('roles.create', compact('modules'));
     }
 
@@ -93,6 +95,11 @@ class RoleController extends Controller
             }
 
             DB::commit();
+
+            $this->logCreate($role, [
+                'modules' => $validated['modules'],
+                'modules_count' => count($validated['modules']),
+            ]);
 
             return redirect()->route('roles.index')
                 ->with('status', 'Rol creado exitosamente con ' . count($validated['modules']) . ' módulo(s)');
@@ -168,8 +175,15 @@ class RoleController extends Controller
 
             DB::commit();
 
+            $this->logUpdate($role, [
+                'modules' => $validated['modules'] ?? [],
+                'modules_count' => isset($validated['modules']) ? count($validated['modules']) : 0,
+                'previous_level' => $role->getOriginal('level'),
+                'new_level' => $validated['level'],
+            ]);
+
             return redirect()->route('roles.index')
-                ->with('status', '✅ ¡Rol actualizado exitosamente!');
+                ->with('status', 'Rol actualizado exitosamente');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -200,6 +214,12 @@ class RoleController extends Controller
         }
 
         try {
+            $this->logDelete($role, [
+                'modules' => $role->modules->pluck('module_name')->toArray(),
+                'level' => $role->level,
+                'description' => $role->description,
+            ]);
+
             // Eliminar módulos asociados antes de eliminar el rol
             $role->modules()->delete();
 

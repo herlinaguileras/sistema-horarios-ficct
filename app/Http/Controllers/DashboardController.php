@@ -16,10 +16,12 @@ use Barryvdh\DomPDF\Facade\Pdf; // Or use PDF; if you have aliased it
 // Make sure you also have Semestre, Horario use statements
 use App\Exports\AsistenciaExport;
 // Make sure 'use Maatwebsite\Excel\Facades\Excel;' and 'use App\Models\Semestre;' are also present
+use App\Traits\LogsActivity;
 
 
 class DashboardController extends Controller
 {
+    use LogsActivity;
 // app/Http/Controllers/DashboardController.php
 
 // ... (use statements should include Request) ...
@@ -269,7 +271,15 @@ public function exportHorarioSemanal(Request $request)
     // 3. Define the filename
     $fileName = 'horario_semanal_' . $semestreActivo->nombre . '.xlsx';
 
-    // 4. Trigger the download using Laravel Excel
+    // 4. Log the export action
+    $this->logExport(Horario::class, [
+        'export_type' => 'horario_semanal',
+        'format' => 'xlsx',
+        'semestre' => $semestreActivo->nombre,
+        'filters' => $request->all(),
+    ]);
+
+    // 5. Trigger the download using Laravel Excel
     // We pass the active semester's ID and filters to our export class
     return Excel::download(new HorarioSemanalExport($semestreActivo->id, $request->all()), $fileName);
 }
@@ -303,7 +313,15 @@ public function exportHorarioSemanal(Request $request)
         // 3. Define the filename
         $fileName = 'horario_semanal_' . $semestreActivo->nombre . '.pdf';
 
-        // 4. Load the PDF view with the data
+        // 4. Log the export action
+        $this->logExport(Horario::class, [
+            'export_type' => 'horario_semanal',
+            'format' => 'pdf',
+            'semestre' => $semestreActivo->nombre,
+            'total_horarios' => $horarios->count(),
+        ]);
+
+        // 5. Load the PDF view with the data
         $pdf = Pdf::loadView('pdf.horario_semanal', [
             'semestreActivo' => $semestreActivo,
             'horariosPorDia' => $horariosPorDia,
@@ -327,6 +345,13 @@ public function exportAsistencia(Request $request)
     }
 
     $fileName = 'asistencia_' . $semestreActivo->nombre . '.xlsx';
+
+    $this->logExport(Asistencia::class, [
+        'export_type' => 'asistencia',
+        'format' => 'xlsx',
+        'semestre' => $semestreActivo->nombre,
+        'filters' => $request->all(),
+    ]);
 
     return Excel::download(new AsistenciaExport($semestreActivo->id, $request->all()), $fileName);
 }
@@ -353,6 +378,13 @@ public function exportAsistenciaPdf()
     $asistenciasAgrupadas = $asistencias->groupBy(['docente_id', 'horario.grupo_id']);
 
     $fileName = 'asistencia_' . $semestreActivo->nombre . '.pdf';
+
+    $this->logExport(Asistencia::class, [
+        'export_type' => 'asistencia',
+        'format' => 'pdf',
+        'semestre' => $semestreActivo->nombre,
+        'total_asistencias' => $asistencias->count(),
+    ]);
 
     // Load the PDF view
     $pdf = Pdf::loadView('pdf.asistencia', [

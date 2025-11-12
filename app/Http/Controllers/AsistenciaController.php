@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Auth; // <-- NUEVO
 use Illuminate\Support\Facades\Hash; // Para verificación de contraseña
 use SimpleSoftwareIO\QrCode\Facades\QrCode; // Para generar códigos QR
 use Illuminate\Support\Facades\URL; // Para URLs firmadas
+use App\Traits\LogsActivity;
 
 class AsistenciaController extends Controller
 {
+    use LogsActivity;
 /**
  * Muestra la lista de asistencias para un horario específico.
  */
@@ -101,19 +103,15 @@ public function create(Horario $horario)
      // 4. CREAMOS EL REGISTRO DE ASISTENCIA
 $asistencia = Asistencia::create($validatedData);
 
-$asistencia->refresh(); // <-- AÑADE ESTA LÍNEA PARA RECARGAR DESDE LA BD
-
-// --- INICIO: REGISTRO EN BITÁCORA DE AUDITORÍA ---
-AuditLog::create([
-    'user_id' => Auth::id(),
-    'action' => 'manual_attendance_create',
-    'model_type' => Asistencia::class,
-    'model_id' => $asistencia->id, // Ahora debería funcionar
-    'details' => 'Justificación: ' . $validatedData['justificacion'],
-    'ip_address' => $request->ip(),
-    'user_agent' => $request->userAgent(),
+$this->logCreate($asistencia, [
+    'horario_id' => $horario->id,
+    'docente_id' => $horario->grupo->docente_id,
+    'fecha' => $validatedData['fecha'],
+    'justificacion' => $validatedData['justificacion'],
+    'grupo' => $horario->grupo->nombre ?? 'N/A',
+    'materia' => $horario->grupo->materia->nombre ?? 'N/A',
 ]);
-    // --- FIN: REGISTRO EN BITÁCORA DE AUDITORÍA ---
+
         // 5. REDIRIGIMOS A LA LISTA
         return redirect()
             ->route('horarios.asistencias.index', $horario)

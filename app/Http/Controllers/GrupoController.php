@@ -8,10 +8,12 @@ use App\Models\Materia;
 use App\Models\Docente;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Traits\LogsActivity;
 
 
 class GrupoController extends Controller
 {
+    use LogsActivity;
    /**
  * Display a listing of the resource.
  */
@@ -57,7 +59,14 @@ public function store(Request $request)
     ]);
 
     // 2. CREAMOS EL GRUPO (CARGA HORARIA)
-    Grupo::create($validatedData);
+    $grupo = Grupo::create($validatedData);
+
+    // Log de auditoría
+    $this->logCreate($grupo, [
+        'semestre' => Semestre::find($validatedData['semestre_id'])->nombre,
+        'materia' => Materia::find($validatedData['materia_id'])->nombre,
+        'docente' => Docente::find($validatedData['docente_id'])->user->name,
+    ]);
 
     // 3. REDIRIGIMOS A LA LISTA
     return redirect()->route('grupos.index')->with('status', '¡Grupo (Carga Horaria) creado exitosamente!');
@@ -106,6 +115,13 @@ public function edit(Grupo $grupo)
         // 2. ACTUALIZAMOS EL GRUPO
         $grupo->update($validatedData);
 
+        // Log de auditoría
+        $this->logUpdate($grupo, $validatedData, [
+            'semestre' => Semestre::find($validatedData['semestre_id'])->nombre,
+            'materia' => Materia::find($validatedData['materia_id'])->nombre,
+            'docente' => Docente::find($validatedData['docente_id'])->user->name,
+        ]);
+
         // 3. REDIRIGIMOS A LA LISTA
         return redirect()->route('grupos.index')->with('status', '¡Grupo (Carga Horaria) actualizado exitosamente!');
     }
@@ -115,6 +131,13 @@ public function edit(Grupo $grupo)
  */
 public function destroy(Grupo $grupo)
 {
+    // Log de auditoría ANTES de eliminar
+    $this->logDelete($grupo, [
+        'semestre' => $grupo->semestre->nombre,
+        'materia' => $grupo->materia->nombre,
+        'docente' => $grupo->docente->user->name,
+    ]);
+
     // 1. ELIMINAMOS EL GRUPO
     $grupo->delete();
 

@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\Rule as ValidationRule;
+use App\Traits\LogsActivity;
 
 class UserController extends Controller
 {
+    use LogsActivity;
     /**
      * Muestra la lista de todos los usuarios.
      */
@@ -87,6 +89,13 @@ class UserController extends Controller
             }
         });
 
+        // Registrar en bitácora
+        $user = User::latest()->first();
+        $this->logCreate($user, [
+            'email' => $request->email,
+            'role' => Role::find($request->role)->name ?? 'unknown',
+        ]);
+
         return redirect()->route('users.index')
             ->with('status', '¡Usuario creado exitosamente!');
     }
@@ -109,26 +118,26 @@ class UserController extends Controller
     {
         // Verificar si el usuario es docente con perfil existente
         $isDocente = $user->hasRole('docente') && $user->docente;
-        
+
         // Verificar si el usuario actual es admin (usando roles relationship)
         $currentUser = Auth::user();
         $isAdmin = $currentUser && $currentUser->roles()->where('name', 'admin')->exists();
-        
+
         // Validación diferente según si es docente o no
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ];
-        
+
         // Solo validar email si el usuario es admin
         if ($isAdmin) {
             $rules['email'] = ['required', 'string', 'email', 'max:255', ValidationRule::unique('users')->ignore($user->id)];
         }
-        
+
         // Si NO es docente con perfil, permitir cambio de rol (solo un rol)
         if (!$isDocente) {
             $rules['role'] = ['required', 'exists:roles,id'];
-            
+
             // Solo validar campos de docente si NO es docente existente
             $rules['codigo_docente'] = ['nullable', 'string', 'max:255', 'unique:docentes,codigo_docente'];
             $rules['carnet_identidad'] = ['nullable', 'string', 'max:255', 'unique:docentes,carnet_identidad'];
@@ -143,12 +152,12 @@ class UserController extends Controller
             $updateData = [
                 'name' => $validated['name'],
             ];
-            
+
             // Solo actualizar email si el usuario es admin
             if ($isAdmin && isset($validated['email'])) {
                 $updateData['email'] = $validated['email'];
             }
-            
+
             $user->update($updateData);
 
             // Actualizar password solo si se proporcionó
@@ -161,7 +170,7 @@ class UserController extends Controller
             // Solo procesar cambio de rol si NO es docente con perfil
             if (!$isDocente && isset($validated['role'])) {
                 $user->roles()->sync([$validated['role']]);
-                
+
                 // Si cambió a rol docente, crear perfil
                 $docenteRole = Role::where('name', 'docente')->first();
 
@@ -192,6 +201,14 @@ class UserController extends Controller
             // Los datos de docente solo se editan desde el módulo de Docentes
         });
 
+        // Registrar en bitácora
+        $this->logUpdate($user, [
+            'name' => $request->name,
+            'email' => $request->email,
+        ], [
+            'role' => Role::find($request->role ?? $user->roles->first()->id)->name ?? 'unknown',
+        ]);
+
         return redirect()->route('users.index')
             ->with('status', '¡Usuario actualizado exitosamente!');
     }
@@ -217,6 +234,12 @@ class UserController extends Controller
                 'user' => 'No puedes eliminar este usuario porque tiene grupos asignados. Desactívalo en su lugar.'
             ]);
         }
+
+        // Registrar en bitácora ANTES de eliminar
+        $this->logDelete($user, [
+            'email' => $user->email,
+            'roles' => $user->roles->pluck('name')->toArray(),
+        ]);
 
         $user->delete();
 

@@ -78,6 +78,12 @@
                         </x-nav-link>
                     </div>
 
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('audit-logs.index')" :active="request()->routeIs('audit-logs.*')">
+                            🔒 {{ __('Bitácora') }}
+                        </x-nav-link>
+                    </div>
+
                 @endif
                 {{-- === END ADMIN LINKS === --}}
 
@@ -267,6 +273,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('estadisticas.index')" :active="request()->routeIs('estadisticas.*')">
                     {{ __('Estadísticas') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('audit-logs.index')" :active="request()->routeIs('audit-logs.*')">
+                    🔒 {{ __('Bitácora') }}
                 </x-responsive-nav-link>
             @endif
              {{-- === END RESPONSIVE ADMIN LINKS === --}}

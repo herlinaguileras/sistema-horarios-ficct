@@ -6,9 +6,11 @@ use App\Models\Semestre;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Traits\LogsActivity;
 
 class SemestreController extends Controller
 {
+    use LogsActivity;
     /**
      * Muestra la lista de todos los semestres.
      */
@@ -42,20 +44,22 @@ class SemestreController extends Controller
             'nombre.unique' => 'Ya existe un semestre con este nombre.',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $semestre = DB::transaction(function () use ($request) {
             // Si se marca como activo, desactivar todos los demás
             if ($request->estado === Semestre::ESTADO_ACTIVO) {
                 Semestre::where('estado', Semestre::ESTADO_ACTIVO)
                     ->update(['estado' => Semestre::ESTADO_TERMINADO]);
             }
 
-            Semestre::create([
+            return Semestre::create([
                 'nombre' => $request->nombre,
                 'fecha_inicio' => $request->fecha_inicio,
                 'fecha_fin' => $request->fecha_fin,
                 'estado' => $request->estado,
             ]);
         });
+
+        $this->logCreate($semestre);
 
         return redirect()->route('semestres.index')
             ->with('status', '✅ ¡Semestre creado exitosamente!');
@@ -109,6 +113,8 @@ class SemestreController extends Controller
             ]);
         });
 
+        $this->logUpdate($semestre, $request->all());
+
         return redirect()->route('semestres.index')
             ->with('status', '✅ ¡Semestre actualizado exitosamente!');
     }
@@ -130,6 +136,8 @@ class SemestreController extends Controller
                 ->withErrors(['error' => 'No se puede eliminar este semestre porque tiene grupos asociados.']);
         }
 
+        $this->logDelete($semestre);
+
         $semestre->delete();
 
         return redirect()->route('semestres.index')
@@ -146,7 +154,7 @@ class SemestreController extends Controller
                 // Si se va a activar, cambiar todos los demás activos a terminado
                 Semestre::where('estado', Semestre::ESTADO_ACTIVO)
                     ->update(['estado' => Semestre::ESTADO_TERMINADO]);
-                
+
                 $semestre->update(['estado' => Semestre::ESTADO_ACTIVO]);
             }
         });

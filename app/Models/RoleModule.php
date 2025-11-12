@@ -95,6 +95,13 @@ class RoleModule extends Model
                 'route' => 'estadisticas.index',
                 'description' => 'Ver estadísticas y reportes',
             ],
+            'bitacora' => [
+                'name' => 'Bitácora del Sistema',
+                'icon' => 'clipboard-list',
+                'color' => 'gray',
+                'route' => 'audit-logs.index',
+                'description' => 'Registro de auditoría y actividades del sistema',
+            ],
         ];
     }
 }

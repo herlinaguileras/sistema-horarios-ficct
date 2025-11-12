@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Aula;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Traits\LogsActivity;
 
 class AulaController extends Controller
 {
+    use LogsActivity;
  /**
  * Display a listing of the resource.
  */
@@ -42,7 +44,8 @@ public function store(Request $request)
     ]);
 
     // 2. CREAMOS EL AULA
-    Aula::create($validatedData);
+    $aula = Aula::create($validatedData);
+    $this->logCreate($aula);
 
     // 3. REDIRIGIMOS A LA LISTA
     return redirect()->route('aulas.index')->with('status', '¡Aula creada exitosamente!');
@@ -90,6 +93,7 @@ public function edit(Aula $aula)
 
         // 2. ACTUALIZAMOS EL AULA
         $aula->update($validatedData);
+        $this->logUpdate($aula, $validatedData);
 
         // 3. REDIRIGIMOS A LA LISTA
         return redirect()->route('aulas.index')->with('status', '¡Aula actualizada exitosamente!');
@@ -100,6 +104,8 @@ public function edit(Aula $aula)
  */
 public function destroy(Aula $aula)
 {
+    $this->logDelete($aula);
+
     // 1. ELIMINAMOS EL AULA
     $aula->delete();
 

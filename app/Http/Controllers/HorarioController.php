@@ -8,10 +8,12 @@ use Illuminate\Validation\Rule;
 use App\Models\Horario;
 use App\Models\Semestre;
 use Illuminate\Support\Facades\DB;
+use App\Traits\LogsActivity;
 
 
 class HorarioController extends Controller
 {
+    use LogsActivity;
     /**
      * Muestra la lista de todos los horarios.
      */
@@ -107,7 +109,7 @@ class HorarioController extends Controller
         $inicio = $request->input('hora_inicio');
         $fin = $request->input('hora_fin');
         $aula_id = $request->input('aula_id');
-        
+
         $grupo = Grupo::findOrFail($grupo_id);
         $docente_id = $grupo->docente_id;
 
@@ -169,15 +171,28 @@ class HorarioController extends Controller
         // 3. SI NO HAY CONFLICTOS, GUARDAMOS TODOS LOS HORARIOS
         DB::beginTransaction();
         try {
+            $horariosCreados = [];
             foreach ($dias as $dia) {
-                Horario::create([
+                $horarioNuevo = Horario::create([
                     'grupo_id' => $grupo_id,
                     'aula_id' => $aula_id,
                     'dia_semana' => $dia,
                     'hora_inicio' => $inicio,
                     'hora_fin' => $fin,
                 ]);
+                $horariosCreados[] = $horarioNuevo->id;
             }
+
+            // Log de auditoría
+            $this->logActivity('CREATE_HORARIOS', 'App\Models\Horario', null, [
+                'grupo' => $grupo->nombre,
+                'materia' => $grupo->materia->nombre,
+                'docente' => $grupo->docente->user->name,
+                'aula' => Aula::find($aula_id)->nombre,
+                'dias_creados' => count($dias),
+                'horarios_ids' => $horariosCreados,
+            ]);
+
             DB::commit();
 
             return redirect()
@@ -220,7 +235,7 @@ class HorarioController extends Controller
         $inicio = $request->input('hora_inicio');
         $fin = $request->input('hora_fin');
         $aula_id = $request->input('aula_id');
-        
+
         $grupo = Grupo::findOrFail($grupo_id);
         $docente_id = $grupo->docente_id;
 
@@ -281,6 +296,13 @@ class HorarioController extends Controller
             'hora_fin' => $fin,
         ]);
 
+        // Log de auditoría
+        $this->logUpdate($horario, $request->all(), [
+            'grupo' => $grupo->nombre,
+            'aula' => Aula::find($aula_id)->nombre,
+            'dia' => $this->getNombreDia($dia),
+        ]);
+
         return redirect()
             ->route('horarios.index')
             ->with('status', '✅ ¡Horario actualizado exitosamente!');
@@ -291,6 +313,14 @@ class HorarioController extends Controller
      */
     public function destroy(Horario $horario)
     {
+        // Log de auditoría ANTES de eliminar
+        $this->logDelete($horario, [
+            'grupo' => $horario->grupo->nombre,
+            'materia' => $horario->grupo->materia->nombre,
+            'dia' => $this->getNombreDia($horario->dia_semana),
+            'hora' => $horario->hora_inicio . ' - ' . $horario->hora_fin,
+        ]);
+
         $horario->delete();
 
         return redirect()

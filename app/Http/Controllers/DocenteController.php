@@ -11,9 +11,11 @@ use Illuminate\Validation\Rules;
 use App\Models\Role;
 use Illuminate\Support\Facades\Log; // <-- ADD THIS LINE
 use Illuminate\Validation\Rule; // <-- ¡Esta es muy importante!
+use App\Traits\LogsActivity;
 
 class DocenteController extends Controller
 {
+    use LogsActivity;
     /**
      * Muestra una lista de todos los docentes.
      */
@@ -35,7 +37,7 @@ public function create()
     // Calcular el próximo código docente
     $ultimoDocente = Docente::orderBy('codigo_docente', 'desc')->first();
     $proximoCodigo = $ultimoDocente ? ((int)$ultimoDocente->codigo_docente + 1) : 100;
-    
+
     // Devolvemos la vista con el próximo código
     return view('docentes.create', ['proximoCodigo' => $proximoCodigo]);
 }
@@ -102,8 +104,17 @@ public function create()
 
         }); // End DB::transaction
 
+        // Obtener el docente recién creado para el log
+        $nuevoDocente = Docente::orderBy('codigo_docente', 'desc')->first();
+
+        // Registrar en bitácora
+        $this->logCreate($nuevoDocente, [
+            'nombre_completo' => $request->name,
+            'codigo_docente' => $nuevoDocente->codigo_docente,
+        ]);
+
         // 3. REDIRECCIÓN
-        return redirect()->route('docentes.index')->with('status', '✅ ¡Docente creado exitosamente con código ' . ((int)(Docente::orderBy('codigo_docente', 'desc')->first()->codigo_docente ?? 100)) . '!');
+        return redirect()->route('docentes.index')->with('status', '✅ ¡Docente creado exitosamente con código ' . $nuevoDocente->codigo_docente . '!');
     }
 
     /**
@@ -113,7 +124,7 @@ public function create()
     {
         // Cargamos las relaciones necesarias
         $docente->load(['user', 'titulos']);
-        
+
         return view('docentes.edit', compact('docente'));
     }
 
@@ -127,7 +138,7 @@ public function create()
     {
         // 1. VALIDACIÓN
         // Validamos los datos que vienen del formulario
-        
+
         // Reglas base
         $rules = [
             // Reglas para 'users'
@@ -137,14 +148,14 @@ public function create()
             'titulo' => ['required', 'string', 'max:255'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ];
-        
+
         // Solo validar unicidad del carnet si ha cambiado
         if ($request->carnet_identidad !== $docente->carnet_identidad) {
             $rules['carnet_identidad'] = ['required', 'string', 'max:255', 'unique:docentes,carnet_identidad'];
         } else {
             $rules['carnet_identidad'] = ['required', 'string', 'max:255'];
         }
-        
+
         $request->validate($rules);
 
         // 2. ACTUALIZACIÓN (Usamos una transacción)
@@ -178,6 +189,16 @@ public function create()
             );
         });
 
+        // Registrar en bitácora
+        $this->logUpdate($docente, [
+            'name' => $request->name,
+            'email' => $request->email,
+            'telefono' => $request->telefono,
+        ], [
+            'nombre_completo' => $request->name,
+            'codigo_docente' => $docente->codigo_docente,
+        ]);
+
         // 3. REDIRECCIÓN
         // Redirigimos de vuelta a la lista con un mensaje de éxito.
         return redirect()->route('docentes.index')->with('status', '✅ ¡Docente actualizado exitosamente!');
@@ -190,39 +211,45 @@ public function create()
     {
         // Verificar si el docente tiene grupos asignados
         $gruposCount = $docente->grupos()->count();
-        
+
         if ($gruposCount > 0) {
             return redirect()->route('docentes.index')
                 ->with('error', "❌ No se puede eliminar el docente porque tiene {$gruposCount} grupo(s) asignado(s). Por favor, reasigna o elimina los grupos primero.");
         }
-        
+
+        // Registrar en bitácora ANTES de eliminar
+        $this->logDelete($docente, [
+            'nombre_completo' => $docente->user->name,
+            'codigo_docente' => $docente->codigo_docente,
+        ]);
+
         DB::transaction(function () use ($docente) {
             // Guardamos el nombre para el mensaje
             $nombre = $docente->user->name;
-            
+
             // 1. Eliminamos los títulos asociados
             $docente->titulos()->delete();
-            
+
             // 2. Eliminamos los horarios de los grupos (si hubiera alguno sin eliminar)
             // Esto es por precaución aunque no debería haber grupos a esta altura
             foreach ($docente->grupos as $grupo) {
                 $grupo->horarios()->delete();
                 $grupo->delete();
             }
-            
+
             // 3. Desvinculamos el rol de docente del usuario
             $docenteRole = Role::where('name', 'docente')->first();
             if ($docenteRole) {
                 $docente->user->roles()->detach($docenteRole->id);
             }
-            
+
             // 4. Eliminamos el perfil de docente
             $docente->delete();
-            
+
             // 5. Eliminamos el usuario asociado
             $docente->user->delete();
         });
-        
+
         return redirect()->route('docentes.index')->with('status', '✅ ¡Docente eliminado exitosamente!');
     }
 

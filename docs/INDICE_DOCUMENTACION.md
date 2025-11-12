@@ -229,7 +229,67 @@ docs/
 
 ---
 
-## 📞 SOPORTE Y MANTENIMIENTO
+## 🔒 MÓDULO DE BITÁCORA (SISTEMA DE AUDITORÍA)
+
+### 📄 [INICIO_RAPIDO_BITACORA.md](./INICIO_RAPIDO_BITACORA.md) 🚀
+**Descripción**: Guía de inicio rápido para usar el módulo en 1 minuto  
+**Contenido**:
+- Acceso rápido al módulo
+- Rutas disponibles
+- Funcionalidades principales (ver, exportar, filtrar, estadísticas)
+- Vista móvil vs desktop
+- Componentes reutilizables con ejemplos
+- Cómo agregar logging a nuevos controladores
+- Solución de problemas comunes
+- Checklist de inicio
+
+**Cuándo usarlo**: **PRIMERO AL USAR** - Si eres nuevo en el módulo, empieza aquí
+
+---
+
+### 📄 [RESUMEN_BITACORA.md](./RESUMEN_BITACORA.md) ⭐
+**Descripción**: Resumen ejecutivo del módulo de bitácora (VISIÓN COMPLETA)  
+**Contenido**:
+- Resumen rápido con métricas (100% backend + 100% frontend)
+- Características principales del sistema
+- Acceso y seguridad (solo admin)
+- Estructura de archivos completa
+- Funcionalidades destacadas (listado, detalle, estadísticas)
+- Experiencia de usuario (desktop/móvil)
+- Checklist de validación completa
+- Instrucciones de uso para admin y desarrolladores
+
+**Cuándo usarlo**: **SIEMPRE PRIMERO** - Es la visión general del módulo completo
+
+---
+
+### 📄 [PLAN_FRONTEND_BITACORA.md](./PLAN_FRONTEND_BITACORA.md)
+**Descripción**: Plan de implementación frontend del módulo de bitácora  
+**Contenido**:
+- 8 fases de desarrollo (Navegación, Listado, Detalle, Estadísticas, Componentes, JavaScript, Responsividad, Pruebas)
+- Estimación de tiempo: 1h 50min
+- Código de ejemplo para cada fase
+- Dependencias y recursos necesarios
+
+**Cuándo usarlo**: Como guía de desarrollo antes de iniciar la implementación
+
+---
+
+### 📄 [FRONTEND_BITACORA_COMPLETO.md](./FRONTEND_BITACORA_COMPLETO.md)
+**Descripción**: Documentación completa de la implementación frontend de bitácora  
+**Contenido**:
+- Resumen de todas las fases completadas (100%)
+- Código fuente de componentes Blade creados
+- JavaScript avanzado (SweetAlert2, Chart.js, parsers)
+- Checklist de validación completa
+- Métricas de implementación
+- Instrucciones de uso para administradores y desarrolladores
+
+**Cuándo usarlo**: Para entender cómo funciona el módulo de bitácora, usar componentes reutilizables, o verificar características implementadas
+
+---
+
+## �📞 SOPORTE Y MANTENIMIENTO
 
 ### Para Verificar Estado del Sistema
 ```bash
