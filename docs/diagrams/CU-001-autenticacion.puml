@@ -1,0 +1,97 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+title CU-001: Sistema de Autenticación
+
+actor "Usuario No Autenticado" as Usuario
+participant "login.blade.php" as LoginView <<Boundary>>
+participant "AuthController" as Auth <<Control>>
+participant "User" as UserModel <<Entity>>
+participant "Session" as SessionManager <<Control>>
+participant "Hash" as HashService <<Service>>
+
+== Iniciar Sesión ==
+Usuario -> LoginView: accederLogin()
+activate LoginView
+
+LoginView --> Usuario: mostrarFormularioLogin()
+
+Usuario -> LoginView: submitLogin(email, password)
+
+LoginView -> Auth: POST route('login')
+activate Auth
+
+Auth -> Auth: validateCredentials()
+
+Auth -> UserModel: findByEmail(email)
+activate UserModel
+
+UserModel --> Auth: usuario
+deactivate UserModel
+
+Auth -> HashService: check(password, usuario.password)
+activate HashService
+
+HashService --> Auth: passwordValido
+deactivate HashService
+
+alt Credenciales Válidas
+    Auth -> SessionManager: create(usuario)
+    activate SessionManager
+
+    SessionManager --> Auth: sessionCreada
+    deactivate SessionManager
+
+    Auth -> Auth: redirect()->route('dashboard')
+
+    Auth --> LoginView: RedirectResponse(status: 'authenticated')
+    deactivate Auth
+
+    LoginView --> Usuario: redirigirDashboard()
+else Credenciales Inválidas
+    Auth --> LoginView: back()->withErrors()
+    deactivate Auth
+
+    LoginView --> Usuario: mostrarError("Credenciales incorrectas")
+end
+
+deactivate LoginView
+
+== Recuperar Contraseña ==
+Usuario -> LoginView: clickOlvidoPassword()
+activate LoginView
+
+LoginView -> Auth: GET route('password.request')
+activate Auth
+
+Auth --> LoginView: view('auth.forgot-password')
+deactivate Auth
+
+LoginView --> Usuario: mostrarFormularioRecuperacion()
+
+Usuario -> LoginView: submitEmail(email)
+
+LoginView -> Auth: POST route('password.email')
+activate Auth
+
+Auth -> UserModel: findByEmail(email)
+activate UserModel
+
+UserModel --> Auth: usuario
+deactivate UserModel
+
+Auth -> Auth: generateResetToken()
+
+Auth -> Auth: sendResetLink(email, token)
+
+Auth --> LoginView: back()->with('status')
+deactivate Auth
+
+LoginView --> Usuario: mostrarMensaje("Enlace enviado")
+
+deactivate LoginView
+
+@enduml
