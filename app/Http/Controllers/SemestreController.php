@@ -124,24 +124,37 @@ class SemestreController extends Controller
      */
     public function destroy(Semestre $semestre)
     {
-        // Verificar que no sea el semestre activo
-        if ($semestre->isActivo()) {
+        try {
+            // Verificar que no sea el semestre activo
+            if ($semestre->isActivo()) {
+                return redirect()->route('semestres.index')
+                    ->withErrors(['error' => '❌ No se puede eliminar el semestre activo. Cámbialo a "Planificación" o "Terminado" primero.']);
+            }
+
+            // Verificar si tiene grupos asociados
+            $gruposCount = $semestre->grupos()->count();
+            if ($gruposCount > 0) {
+                return redirect()->route('semestres.index')
+                    ->withErrors(['error' => "❌ No se puede eliminar este semestre porque tiene {$gruposCount} grupo(s) asociado(s). Elimina primero los grupos o reasígnalos a otro semestre."]);
+            }
+
+            // Validar que se puede eliminar solo si está en Planificación o Terminado
+            if (!in_array($semestre->estado, [Semestre::ESTADO_PLANIFICACION, Semestre::ESTADO_TERMINADO])) {
+                return redirect()->route('semestres.index')
+                    ->withErrors(['error' => '❌ Solo se pueden eliminar semestres en estado "Planificación" o "Terminado".']);
+            }
+
+            $this->logDelete($semestre);
+
+            $semestre->delete();
+
             return redirect()->route('semestres.index')
-                ->withErrors(['error' => 'No se puede eliminar el semestre activo. Cámbialo a otro estado primero.']);
-        }
+                ->with('status', '✅ ¡Semestre eliminado exitosamente!');
 
-        // Verificar si tiene grupos asociados
-        if ($semestre->grupos()->count() > 0) {
+        } catch (\Exception $e) {
             return redirect()->route('semestres.index')
-                ->withErrors(['error' => 'No se puede eliminar este semestre porque tiene grupos asociados.']);
+                ->withErrors(['error' => '❌ Error al eliminar el semestre: ' . $e->getMessage()]);
         }
-
-        $this->logDelete($semestre);
-
-        $semestre->delete();
-
-        return redirect()->route('semestres.index')
-            ->with('status', '✅ ¡Semestre eliminado exitosamente!');
     }
 
     /**

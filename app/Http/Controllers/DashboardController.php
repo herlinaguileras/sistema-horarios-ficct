@@ -271,23 +271,27 @@ public function exportHorarioSemanal(Request $request)
     // 3. Define the filename
     $fileName = 'horario_semanal_' . $semestreActivo->nombre . '.xlsx';
 
-    // 4. Log the export action
-    $this->logExport(Horario::class, [
-        'export_type' => 'horario_semanal',
+    // 4. Obtener horarios para contar
+    $horarios = Horario::whereHas('grupo', function ($query) use ($semestreActivo) {
+        $query->where('semestre_id', $semestreActivo->id);
+    })->get();
+
+    // 5. Log the export action
+    $this->logExport('horario_semanal', $horarios->count(), [
         'format' => 'xlsx',
         'semestre' => $semestreActivo->nombre,
         'filters' => $request->all(),
     ]);
 
-    // 5. Trigger the download using Laravel Excel
+    // 6. Trigger the download using Laravel Excel
     // We pass the active semester's ID and filters to our export class
     return Excel::download(new HorarioSemanalExport($semestreActivo->id, $request->all()), $fileName);
 }
 
-/**
+    /**
      * Handle the export of the weekly schedule to PDF.
      */
-    public function exportHorarioSemanalPdf() // <-- CHECK THIS NAME CAREFULLY
+    public function exportHorarioSemanalPdf(Request $request) // <-- CHECK THIS NAME CAREFULLY
     {
         // 1. Find the active semester
         $semestreActivo = Semestre::where('estado', 'Activo')->first();
@@ -297,11 +301,34 @@ public function exportHorarioSemanal(Request $request)
         }
 
         // 2. Fetch the data (same logic as index/Excel export)
-        $horarios = Horario::whereHas('grupo', function ($query) use ($semestreActivo) {
+        $query = Horario::query()
+            ->whereHas('grupo', function ($query) use ($semestreActivo) {
                 $query->where('semestre_id', $semestreActivo->id);
             })
-            ->with(['grupo.materia', 'grupo.docente.user', 'aula'])
-            ->orderBy('dia_semana')
+            ->with(['grupo.materia', 'grupo.docente.user', 'aula']);
+
+        // Apply filters
+        if ($request->filled('filtro_docente_id')) {
+            $query->whereHas('grupo', function ($q) use ($request) {
+                $q->where('docente_id', $request->filtro_docente_id);
+            });
+        }
+        if ($request->filled('filtro_materia_id')) {
+            $query->whereHas('grupo', function ($q) use ($request) {
+                $q->where('materia_id', $request->filtro_materia_id);
+            });
+        }
+        if ($request->filled('filtro_grupo_id')) {
+            $query->where('grupo_id', $request->filtro_grupo_id);
+        }
+        if ($request->filled('filtro_aula_id')) {
+            $query->where('aula_id', $request->filtro_aula_id);
+        }
+        if ($request->filled('filtro_dia_semana')) {
+            $query->where('dia_semana', $request->filtro_dia_semana);
+        }
+
+        $horarios = $query->orderBy('dia_semana')
             ->orderBy('hora_inicio')
             ->get();
         $horariosPorDia = $horarios->groupBy('dia_semana');
@@ -314,11 +341,10 @@ public function exportHorarioSemanal(Request $request)
         $fileName = 'horario_semanal_' . $semestreActivo->nombre . '.pdf';
 
         // 4. Log the export action
-        $this->logExport(Horario::class, [
-            'export_type' => 'horario_semanal',
+        $this->logExport('horario_semanal', $horarios->count(), [
             'format' => 'pdf',
             'semestre' => $semestreActivo->nombre,
-            'total_horarios' => $horarios->count(),
+            'filters' => $request->all(),
         ]);
 
         // 5. Load the PDF view with the data
@@ -346,8 +372,12 @@ public function exportAsistencia(Request $request)
 
     $fileName = 'asistencia_' . $semestreActivo->nombre . '.xlsx';
 
-    $this->logExport(Asistencia::class, [
-        'export_type' => 'asistencia',
+    // Obtener asistencias para contar
+    $asistencias = Asistencia::whereHas('horario.grupo', function ($query) use ($semestreActivo) {
+        $query->where('semestre_id', $semestreActivo->id);
+    })->get();
+
+    $this->logExport('asistencia', $asistencias->count(), [
         'format' => 'xlsx',
         'semestre' => $semestreActivo->nombre,
         'filters' => $request->all(),
@@ -359,7 +389,7 @@ public function exportAsistencia(Request $request)
 /**
  * Handle the export of attendance data to PDF.
  */
-public function exportAsistenciaPdf()
+public function exportAsistenciaPdf(Request $request)
 {
     $semestreActivo = Semestre::where('estado', 'Activo')->first();
 
@@ -369,21 +399,49 @@ public function exportAsistenciaPdf()
     }
 
     // Fetch and group attendance data (same logic as index)
-    $asistencias = Asistencia::whereHas('horario.grupo', function ($query) use ($semestreActivo) {
+    $query = Asistencia::query()
+        ->whereHas('horario.grupo', function ($query) use ($semestreActivo) {
             $query->where('semestre_id', $semestreActivo->id);
         })
-        ->with(['docente.user', 'horario.grupo.materia'])
-        ->orderBy('docente_id')->orderBy('horario_id')->orderBy('fecha', 'asc')->orderBy('hora_registro', 'asc')
+        ->with(['docente.user', 'horario.grupo.materia']);
+
+    // Apply filters
+    if ($request->filled('filtro_asist_docente_id')) {
+        $query->where('docente_id', $request->filtro_asist_docente_id);
+    }
+    if ($request->filled('filtro_asist_materia_id')) {
+        $query->whereHas('horario.grupo', function ($q) use ($request) {
+            $q->where('materia_id', $request->filtro_asist_materia_id);
+        });
+    }
+    if ($request->filled('filtro_asist_grupo_id')) {
+        $query->whereHas('horario', function ($q) use ($request) {
+            $q->where('grupo_id', $request->filtro_asist_grupo_id);
+        });
+    }
+    if ($request->filled('filtro_asist_estado')) {
+        $query->where('estado', $request->filtro_asist_estado);
+    }
+    if ($request->filled('filtro_asist_metodo')) {
+        $query->where('metodo_registro', $request->filtro_asist_metodo);
+    }
+    if ($request->filled('filtro_asist_fecha_inicio')) {
+        $query->where('fecha', '>=', $request->filtro_asist_fecha_inicio);
+    }
+    if ($request->filled('filtro_asist_fecha_fin')) {
+        $query->where('fecha', '<=', $request->filtro_asist_fecha_fin);
+    }
+
+    $asistencias = $query->orderBy('docente_id')->orderBy('horario_id')->orderBy('fecha', 'asc')->orderBy('hora_registro', 'asc')
         ->get();
     $asistenciasAgrupadas = $asistencias->groupBy(['docente_id', 'horario.grupo_id']);
 
     $fileName = 'asistencia_' . $semestreActivo->nombre . '.pdf';
 
-    $this->logExport(Asistencia::class, [
-        'export_type' => 'asistencia',
+    $this->logExport('asistencia', $asistencias->count(), [
         'format' => 'pdf',
         'semestre' => $semestreActivo->nombre,
-        'total_asistencias' => $asistencias->count(),
+        'filters' => $request->all(),
     ]);
 
     // Load the PDF view

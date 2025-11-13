@@ -88,59 +88,62 @@
                             <p class="mb-3 text-sm text-gray-600">
                                 💡 <strong>Importante:</strong> Selecciona los módulos a los que este rol tendrá acceso completo (ver, crear, editar, eliminar).
                             </p>
-                            <div class="p-4 border border-gray-300 rounded-md bg-gray-50">
+                            <p class="mb-4 text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded p-2">
+                                📦 Los módulos están organizados por <strong>paquetes</strong>. Al seleccionar módulos de un paquete, el usuario verá ese paquete en la navegación.
+                            </p>
+                            <div class="p-4 border border-gray-300 rounded-md bg-gray-50 space-y-6">
                                 @php
-                                    $iconos = [
-                                        'usuarios' => '👥',
-                                        'roles' => '🛡️',
-                                        'docentes' => '👨‍🏫',
-                                        'materias' => '📚',
-                                        'aulas' => '🏫',
-                                        'grupos' => '👥',
-                                        'semestres' => '📅',
-                                        'horarios' => '🕐',
-                                        'importacion' => '�',
-                                        'estadisticas' => '�',
-                                    ];
-                                    $colores = [
-                                        'usuarios' => 'bg-pink-50 border-pink-200',
-                                        'roles' => 'bg-gray-50 border-gray-200',
-                                        'docentes' => 'bg-blue-50 border-blue-200',
-                                        'materias' => 'bg-green-50 border-green-200',
-                                        'aulas' => 'bg-red-50 border-red-200',
-                                        'grupos' => 'bg-yellow-50 border-yellow-200',
-                                        'semestres' => 'bg-teal-50 border-teal-200',
-                                        'horarios' => 'bg-indigo-50 border-indigo-200',
-                                        'importacion' => 'bg-cyan-50 border-cyan-200',
-                                        'estadisticas' => 'bg-purple-50 border-purple-200',
-                                    ];
                                     $selectedModules = old('modules', []);
+
+                                    // Definir paquetes con sus módulos
+                                    $paquetes = [
+                                        'usuarios_roles' => [
+                                            'titulo' => '👥 PAQUETE 1: Usuarios y Roles',
+                                            'color' => 'bg-purple-50 border-purple-300',
+                                            'badge' => 'bg-purple-100 text-purple-800',
+                                            'modulos' => ['usuarios', 'roles']
+                                        ],
+                                        'periodo_academico' => [
+                                            'titulo' => '📅 PAQUETE 2: Periodo Académico',
+                                            'color' => 'bg-blue-50 border-blue-300',
+                                            'badge' => 'bg-blue-100 text-blue-800',
+                                            'modulos' => ['docentes', 'materias', 'aulas', 'grupos', 'semestres', 'horarios']
+                                        ],
+                                        'reportes' => [
+                                            'titulo' => '📈 PAQUETE 3: Reportes',
+                                            'color' => 'bg-orange-50 border-orange-300',
+                                            'badge' => 'bg-orange-100 text-orange-800',
+                                            'modulos' => ['bitacora', 'importacion', 'estadisticas']
+                                        ]
+                                    ];
                                 @endphp
 
-                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                    @foreach($modules as $moduleKey => $moduleInfo)
-                                        <label class="flex items-start p-4 space-x-3 border-2 rounded-lg cursor-pointer transition-all {{ $colores[$moduleKey] ?? 'bg-gray-50 border-gray-200' }} hover:shadow-md">
-                                            <input type="checkbox"
-                                                   name="modules[]"
-                                                   value="{{ $moduleKey }}"
-                                                   class="w-5 h-5 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                   {{ in_array($moduleKey, $selectedModules) ? 'checked' : '' }}>
-                                            <div class="flex-1">
-                                                <div class="flex items-center space-x-2 mb-1">
-                                                    <span class="text-2xl">{{ $iconos[$moduleKey] ?? '📦' }}</span>
-                                                    <span class="font-bold text-gray-800">{{ $moduleInfo['name'] }}</span>
-                                                </div>
-                                                <p class="text-xs text-gray-600">{{ $moduleInfo['description'] }}</p>
-                                                <div class="mt-2 flex flex-wrap gap-1">
-                                                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">👁️ Ver</span>
-                                                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">➕ Crear</span>
-                                                    <span class="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded">✏️ Editar</span>
-                                                    <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">🗑️ Eliminar</span>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
+                                @foreach($paquetes as $paqueteKey => $paquete)
+                                    <div class="p-4 rounded-lg border-2 {{ $paquete['color'] }}">
+                                        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                            {{ $paquete['titulo'] }}
+                                            <span class="text-xs px-2 py-1 rounded {{ $paquete['badge'] }}">{{ count($paquete['modulos']) }} módulos</span>
+                                        </h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            @foreach($paquete['modulos'] as $moduleKey)
+                                                @if(isset($modules[$moduleKey]))
+                                                    @php $moduleInfo = $modules[$moduleKey]; @endphp
+                                                    <label class="flex items-start p-3 space-x-2 bg-white border-2 border-gray-200 rounded-lg cursor-pointer transition-all hover:shadow-md hover:border-indigo-400">
+                                                        <input type="checkbox"
+                                                               name="modules[]"
+                                                               value="{{ $moduleKey }}"
+                                                               class="w-4 h-4 mt-1 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                               {{ in_array($moduleKey, $selectedModules) ? 'checked' : '' }}>
+                                                        <div class="flex-1">
+                                                            <div class="font-semibold text-gray-800 text-sm">{{ $moduleInfo['name'] }}</div>
+                                                            <p class="text-xs text-gray-600 mt-1">{{ $moduleInfo['description'] }}</p>
+                                                        </div>
+                                                    </label>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                             @error('modules')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

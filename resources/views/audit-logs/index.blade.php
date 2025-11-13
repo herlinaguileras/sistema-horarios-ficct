@@ -5,7 +5,7 @@
                 {{ __('Bitácora del Sistema') }}
             </h2>
             <div class="flex gap-2">
-                <form action="{{ route('audit-logs.export') }}" method="GET" class="inline" id="exportForm">
+                <form action="{{ route('audit-logs.export') }}" method="GET" class="inline" id="auditLogsExportForm">
                     @foreach(request()->except('_token') as $key => $value)
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                     @endforeach
@@ -124,7 +124,6 @@
                                     <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Endpoint</th>
                                     <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Método</th>
                                     <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">IP</th>
-                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -199,16 +198,10 @@
                                         <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                             {{ $log->ip_address }}
                                         </td>
-                                        <td class="px-6 py-4 text-sm whitespace-nowrap">
-                                            <a href="{{ route('audit-logs.show', $log) }}"
-                                               class="inline-flex items-center gap-1 px-3 py-1 text-white transition bg-blue-500 rounded hover:bg-blue-600">
-                                                <i class="fas fa-eye"></i> Ver
-                                            </a>
-                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                             No se encontraron registros
                                         </td>
                                     </tr>
@@ -302,13 +295,7 @@
                                     </code>
                                 </div>
 
-                                <!-- Botón de Acción -->
-                                <a href="{{ route('audit-logs.show', $log) }}"
-                                   class="inline-flex items-center justify-center w-full gap-2 px-4 py-2 text-white transition bg-blue-500 rounded-lg hover:bg-blue-600 touch-manipulation active:scale-95"
-                                   aria-label="Ver detalles del registro {{ $log->id }}">
-                                    <i class="fas fa-eye"></i>
-                                    <span>Ver Detalles</span>
-                                </a>
+
                             </article>
                         @empty
                             <div class="p-8 text-center border-2 border-gray-300 border-dashed rounded-lg bg-gray-50">
@@ -351,9 +338,9 @@
                 });
             }
 
-            // El formulario de exportación (#exportForm) se envía normalmente
+            // El formulario de exportación (#auditLogsExportForm) se envía normalmente
             // SIN interceptación JavaScript, permitiendo la descarga automática del archivo CSV
-            console.log('✅ Formulario de exportación configurado para descarga directa');
+            console.log('✅ Formulario de exportación de bitácora configurado para descarga directa');
         });
     </script>
 </x-app-layout>

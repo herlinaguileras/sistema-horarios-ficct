@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Exportación Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px 10px 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+            text-decoration: none;
+        }
+        .btn-excel {
+            background-color: #10b981;
+        }
+        .btn-excel:hover {
+            background-color: #059669;
+        }
+        .btn-pdf {
+            background-color: #ef4444;
+        }
+        .btn-pdf:hover {
+            background-color: #dc2626;
+        }
+        .btn-test {
+            background-color: #3b82f6;
+        }
+        .btn-test:hover {
+            background-color: #2563eb;
+        }
+        .log {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .warning {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Exportación Dashboard</h1>
+    <p>Este archivo prueba directamente las rutas de exportación</p>
+
+    <!-- TEST 1: Enlaces directos -->
+    <div class="test-section">
+        <h2>1. Enlaces Directos (Sin Filtros)</h2>
+        <p>Haz clic para descargar directamente</p>
+
+        <a href="/dashboard/export/horario-semanal" class="btn btn-excel" target="_blank">
+            📊 Excel Horarios
+        </a>
+
+        <a href="/dashboard/export/horario-semanal-pdf" class="btn btn-pdf" target="_blank">
+            📄 PDF Horarios
+        </a>
+
+        <a href="/dashboard/export/asistencia" class="btn btn-excel" target="_blank">
+            📊 Excel Asistencias
+        </a>
+
+        <a href="/dashboard/export/asistencia-pdf" class="btn btn-pdf" target="_blank">
+            📄 PDF Asistencias
+        </a>
+    </div>
+
+    <!-- TEST 2: Enlaces con filtros -->
+    <div class="test-section">
+        <h2>2. Enlaces con Filtros (Docente ID 38)</h2>
+        <p>Exportación filtrada por docente</p>
+
+        <a href="/dashboard/export/horario-semanal?filtro_docente_id=38" class="btn btn-excel" target="_blank">
+            📊 Excel Horarios (Filtrado)
+        </a>
+
+        <a href="/dashboard/export/horario-semanal-pdf?filtro_docente_id=38" class="btn btn-pdf" target="_blank">
+            📄 PDF Horarios (Filtrado)
+        </a>
+    </div>
+
+    <!-- TEST 3: Simulación JavaScript -->
+    <div class="test-section">
+        <h2>3. Test con JavaScript (Como en Dashboard)</h2>
+        <p>Simula el comportamiento del dashboard real</p>
+
+        <button onclick="testExcelExport()" class="btn btn-excel">
+            📊 Test Excel (JS)
+        </button>
+
+        <button onclick="testPdfExport()" class="btn btn-pdf">
+            📄 Test PDF (JS)
+        </button>
+
+        <button onclick="testWithFilters()" class="btn btn-test">
+            🔍 Test con Filtros (JS)
+        </button>
+
+        <button onclick="checkFunctions()" class="btn btn-test">
+            🔧 Verificar Funciones
+        </button>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Formulario oculto para test -->
+    <form id="testExportForm" method="GET" action="/dashboard/export/horario-semanal" style="display: none;">
+        <input type="hidden" name="filtro_docente_id" value="38">
+    </form>
+
+    <script>
+        const log = document.getElementById('log');
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+            log.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function testExcelExport() {
+            addLog('🔄 Probando exportación Excel...', 'info');
+
+            const form = document.getElementById('testExportForm');
+
+            if (!form) {
+                addLog('❌ Formulario no encontrado', 'error');
+                return;
+            }
+
+            addLog('✅ Formulario encontrado', 'success');
+            addLog('📤 Enviando formulario...', 'info');
+
+            form.submit();
+
+            setTimeout(() => {
+                addLog('✅ Formulario enviado. Verifica la descarga.', 'success');
+            }, 1000);
+        }
+
+        function testPdfExport() {
+            addLog('🔄 Probando exportación PDF...', 'info');
+
+            const url = '/dashboard/export/horario-semanal-pdf?filtro_docente_id=38';
+
+            addLog('🌐 URL: ' + url, 'info');
+            addLog('📤 Abriendo nueva ventana...', 'info');
+
+            const newWindow = window.open(url, '_blank');
+
+            if (newWindow) {
+                addLog('✅ Ventana abierta. Verifica la descarga en la nueva pestaña.', 'success');
+            } else {
+                addLog('❌ Popup bloqueado. Permite popups para este sitio.', 'error');
+            }
+        }
+
+        function testWithFilters() {
+            addLog('🔄 Probando exportación con filtros...', 'info');
+
+            const filters = {
+                filtro_docente_id: '38',
+                filtro_materia_id: '',
+                filtro_grupo_id: '',
+                filtro_aula_id: '',
+                filtro_dia_semana: ''
+            };
+
+            const params = new URLSearchParams();
+            for (const [key, value] of Object.entries(filters)) {
+                if (value && value.trim() !== '') {
+                    params.append(key, value);
+                    addLog(`🔍 Filtro agregado: ${key} = ${value}`, 'info');
+                }
+            }
+
+            const url = `/dashboard/export/horario-semanal-pdf?${params.toString()}`;
+
+            addLog('🌐 URL final: ' + url, 'info');
+            addLog('📤 Abriendo PDF...', 'info');
+
+            window.open(url, '_blank');
+
+            addLog('✅ Ventana abierta. Verifica la descarga.', 'success');
+        }
+
+        function checkFunctions() {
+            addLog('🔍 Verificando funciones del dashboard...', 'info');
+
+            // Verificar si las funciones existen
+            if (typeof submitExportForm !== 'undefined') {
+                addLog('✅ submitExportForm() existe', 'success');
+            } else {
+                addLog('❌ submitExportForm() NO existe', 'error');
+                addLog('⚠️  Esta función debería estar en layouts/app.blade.php', 'warning');
+            }
+
+            if (typeof exportPdfWithFilters !== 'undefined') {
+                addLog('✅ exportPdfWithFilters() existe', 'success');
+            } else {
+                addLog('❌ exportPdfWithFilters() NO existe', 'error');
+                addLog('⚠️  Esta función debería estar en layouts/app.blade.php', 'warning');
+            }
+
+            // Verificar formulario
+            const dashboardForm = document.getElementById('dashboardHorarioExportForm');
+            if (dashboardForm) {
+                addLog('✅ Formulario dashboard encontrado', 'success');
+            } else {
+                addLog('⚠️  Formulario dashboard NO encontrado (normal en esta página)', 'warning');
+                addLog('   Debe existir en la página del dashboard real', 'info');
+            }
+
+            // Verificar contenedor de filtros
+            const filtersContainer = document.getElementById('dashboardHorarioPdfFilters');
+            if (filtersContainer) {
+                addLog('✅ Contenedor de filtros encontrado', 'success');
+            } else {
+                addLog('⚠️  Contenedor de filtros NO encontrado (normal en esta página)', 'warning');
+                addLog('   Debe existir en la página del dashboard real', 'info');
+            }
+
+            addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+            addLog('📝 Resumen:', 'info');
+            addLog('   Este es un archivo de prueba independiente.', 'info');
+            addLog('   Para verificar el dashboard real, ve a:', 'info');
+            addLog('   http://127.0.0.1:8000/dashboard?tab=horarios', 'info');
+        }
+
+        // Log inicial
+        addLog('✅ Página de prueba cargada correctamente', 'success');
+        addLog('📋 Haz clic en los botones para probar las exportaciones', 'info');
+        addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+    </script>
+</body>
+</html>

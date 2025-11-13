@@ -2,9 +2,16 @@
     <div class="flex items-center justify-between mb-4">
         <h4 class="font-medium text-md">Asistencia por Docente y Grupo - {{ $semestreActivo ? $semestreActivo->nombre : 'N/A' }}</h4>
         @if ($semestreActivo)
-        <div>
-            <button onclick="document.getElementById('exportFormAsistencia').submit()" class="inline-flex items-center px-3 py-1 ml-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-green-600 border border-transparent rounded-md hover:bg-green-500 active:bg-green-700 focus:outline-none focus:border-green-700 focus:ring ring-green-300 disabled:opacity-25">Excel</button>
-            <a href="{{ route('dashboard.export.asistencia.pdf') }}" class="inline-flex items-center px-3 py-1 ml-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-500 active:bg-red-700 focus:outline-none focus:border-red-700 focus:ring ring-red-300 disabled:opacity-25">PDF</a>
+        <div class="flex gap-2">
+            <button onclick="submitExportForm('dashboardAsistenciaExportForm', this)"
+                    class="inline-flex items-center px-3 py-1 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-green-600 border border-transparent rounded-md hover:bg-green-500 active:bg-green-700 focus:outline-none focus:border-green-700 focus:ring ring-green-300 disabled:opacity-25">
+                <span class="btn-text"><i class="fas fa-file-excel mr-1"></i> Excel</span>
+                <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin mr-1"></i> Exportando...</span>
+            </button>
+            <button onclick="exportPdfWithFilters('{{ route('dashboard.export.asistencia.pdf') }}', 'dashboardAsistenciaPdfFilters')"
+               class="inline-flex items-center px-3 py-1 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-500 active:bg-red-700 focus:outline-none focus:border-red-700 focus:ring ring-red-300 disabled:opacity-25">
+                <i class="fas fa-file-pdf mr-1"></i> PDF
+            </button>
         </div>
         @endif
     </div>
@@ -16,7 +23,7 @@
         <h5 class="font-semibold text-sm text-gray-700 mb-3">🔍 Filtros de Búsqueda</h5>
         <form method="GET" action="{{ route('dashboard') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <input type="hidden" name="tab" value="asistencias">
-            
+
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Docente</label>
                 <select name="filtro_asist_docente_id" class="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -74,13 +81,13 @@
 
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Fecha Inicio</label>
-                <input type="date" name="filtro_asist_fecha_inicio" value="{{ $filtros['filtro_asist_fecha_inicio'] ?? '' }}" 
+                <input type="date" name="filtro_asist_fecha_inicio" value="{{ $filtros['filtro_asist_fecha_inicio'] ?? '' }}"
                     class="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
             </div>
 
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Fecha Fin</label>
-                <input type="date" name="filtro_asist_fecha_fin" value="{{ $filtros['filtro_asist_fecha_fin'] ?? '' }}" 
+                <input type="date" name="filtro_asist_fecha_fin" value="{{ $filtros['filtro_asist_fecha_fin'] ?? '' }}"
                     class="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
             </div>
 
@@ -95,8 +102,8 @@
         </form>
     </div>
 
-    {{-- Formulario oculto para exportar con filtros --}}
-    <form id="exportFormAsistencia" method="GET" action="{{ route('dashboard.export.asistencia') }}" style="display: none;">
+    {{-- Formulario oculto para exportar Excel con filtros --}}
+    <form id="dashboardAsistenciaExportForm" method="GET" action="{{ route('dashboard.export.asistencia') }}" style="display: none;">
         <input type="hidden" name="filtro_asist_docente_id" value="{{ $filtros['filtro_asist_docente_id'] ?? '' }}">
         <input type="hidden" name="filtro_asist_materia_id" value="{{ $filtros['filtro_asist_materia_id'] ?? '' }}">
         <input type="hidden" name="filtro_asist_grupo_id" value="{{ $filtros['filtro_asist_grupo_id'] ?? '' }}">
@@ -105,6 +112,17 @@
         <input type="hidden" name="filtro_asist_fecha_inicio" value="{{ $filtros['filtro_asist_fecha_inicio'] ?? '' }}">
         <input type="hidden" name="filtro_asist_fecha_fin" value="{{ $filtros['filtro_asist_fecha_fin'] ?? '' }}">
     </form>
+
+    {{-- Contenedor oculto con filtros para PDF --}}
+    <div id="dashboardAsistenciaPdfFilters" style="display: none;"
+         data-filtro_asist_docente_id="{{ $filtros['filtro_asist_docente_id'] ?? '' }}"
+         data-filtro_asist_materia_id="{{ $filtros['filtro_asist_materia_id'] ?? '' }}"
+         data-filtro_asist_grupo_id="{{ $filtros['filtro_asist_grupo_id'] ?? '' }}"
+         data-filtro_asist_estado="{{ $filtros['filtro_asist_estado'] ?? '' }}"
+         data-filtro_asist_metodo="{{ $filtros['filtro_asist_metodo'] ?? '' }}"
+         data-filtro_asist_fecha_inicio="{{ $filtros['filtro_asist_fecha_inicio'] ?? '' }}"
+         data-filtro_asist_fecha_fin="{{ $filtros['filtro_asist_fecha_fin'] ?? '' }}">
+    </div>
     @endif
 </div>
 

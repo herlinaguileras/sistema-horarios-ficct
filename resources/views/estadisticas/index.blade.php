@@ -4,9 +4,7 @@
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
                 {{ __('Estadísticas de Docentes') }}
             </h2>
-            <div class="text-sm text-gray-600">
-                📊 Vista General de Asistencias
-            </div>
+
         </div>
     </x-slot>
 
@@ -124,7 +122,6 @@
                                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Grupos</th>
                                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Horarios</th>
                                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Total Asist.</th>
-                                        <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Mes Actual</th>
                                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">% Cumplimiento</th>
                                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Índice Constancia</th>
                                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Frec. Semanal</th>
@@ -166,24 +163,6 @@
                                                 <span class="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
                                                     {{ $stat['total_asistencias'] }}
                                                 </span>
-                                            </td>
-                                            <td class="px-6 py-4 text-sm text-center text-gray-900 whitespace-nowrap">
-                                                <div class="flex flex-col items-center">
-                                                    <span class="inline-flex px-2 text-xs font-semibold leading-5 text-orange-800 bg-orange-100 rounded-full">
-                                                        {{ $stat['asistencias_mes_actual'] }}
-                                                    </span>
-                                                    @if($stat['dias_sin_registro'] !== null)
-                                                        <span class="mt-1 text-xs text-gray-500">
-                                                            @if($stat['dias_sin_registro'] == 0)
-                                                                Hoy
-                                                            @elseif($stat['dias_sin_registro'] == 1)
-                                                                Ayer
-                                                            @else
-                                                                {{ $stat['dias_sin_registro'] }}d
-                                                            @endif
-                                                        </span>
-                                                    @endif
-                                                </div>
                                             </td>
                                             <td class="px-6 py-4 text-sm text-center whitespace-nowrap">
                                                 <div class="flex flex-col items-center">

@@ -107,11 +107,10 @@ class HorarioImportController extends Controller
             DB::commit();
 
             // Registrar importación exitosa en bitácora
-            $this->logImport(null, [
+            $this->logImport('horarios', $estadisticas['horarios_creados'], [
                 'total_filas' => $estadisticas['total'],
                 'exitosas' => $estadisticas['exitosas'],
-                'fallidas' => $estadisticas['fallidas'],
-                'omitidas' => $estadisticas['omitidas'],
+                'errores' => $estadisticas['errores'],
                 'docentes_creados' => $estadisticas['docentes_creados'],
                 'materias_creadas' => $estadisticas['materias_creadas'],
                 'grupos_creados' => $estadisticas['grupos_creados'],
