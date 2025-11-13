@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuditLogController extends Controller
 {
@@ -146,6 +147,13 @@ class AuditLogController extends Controller
      */
     public function export(Request $request)
     {
+        // Log para depuración
+        Log::info('Export method called', [
+            'all_params' => $request->all(),
+            'method' => $request->method(),
+            'url' => $request->fullUrl()
+        ]);
+
         $query = AuditLog::with('user')->orderBy('created_at', 'desc');
 
         // Aplicar los mismos filtros que en index

@@ -143,7 +143,7 @@ class EstadisticaController extends Controller
     public function show(Docente $docente)
     {
         $user = auth()->user();
-        
+
         // Si el usuario es docente, solo puede ver sus propias estadísticas
         if ($user->hasRole('docente')) {
             // Verificar que el usuario autenticado es el dueño de estas estadísticas
@@ -151,7 +151,7 @@ class EstadisticaController extends Controller
                 abort(403, 'No tienes permiso para ver las estadísticas de otro docente.');
             }
         }
-        
+
         // Cargar relaciones necesarias
         $docente->load(['user', 'grupos.materia', 'grupos.semestre', 'grupos.horarios.aula', 'grupos.horarios.asistencias']);
 
@@ -170,9 +170,6 @@ class EstadisticaController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->get();
 
-                // Contar estudiantes únicos que asistieron
-                $estudiantesUnicos = $asistencias->pluck('estudiante_id')->unique()->count();
-
                 // Agrupar asistencias por fecha para el historial
                 $historialPorFecha = $asistencias->groupBy(function($asistencia) {
                     return \Carbon\Carbon::parse($asistencia->fecha)->format('Y-m-d');
@@ -183,7 +180,7 @@ class EstadisticaController extends Controller
                 foreach ($historialPorFecha as $fecha => $asistenciasDia) {
                     $historial[] = [
                         'fecha' => $fecha,
-                        'cantidad_estudiantes' => $asistenciasDia->count(),
+                        'registros_asistencia' => $asistenciasDia->count(),
                         'metodo_registro' => $asistenciasDia->first()->metodo_registro ?? 'manual',
                         'hora_registro' => $asistenciasDia->first()->created_at,
                         'asistencias' => $asistenciasDia
@@ -194,7 +191,6 @@ class EstadisticaController extends Controller
                     'grupo' => $grupo,
                     'horario' => $horario,
                     'total_asistencias' => $asistencias->count(),
-                    'estudiantes_unicos' => $estudiantesUnicos,
                     'historial' => $historial,
                 ];
             }

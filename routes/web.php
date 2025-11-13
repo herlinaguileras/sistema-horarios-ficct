@@ -40,6 +40,10 @@ Route::get('/dashboard/export/asistencia-pdf', [DashboardController::class, 'exp
     ->middleware(['auth', 'verified'])
     ->name('dashboard.export.asistencia.pdf');
 
+// Ruta de test para exportación (solo desarrollo)
+Route::get('/test-export', function () {
+    return view('test-export');
+})->middleware(['auth', 'verified'])->name('test.export');
 
 // --- PROTECTED ADMIN ROUTES ---
 // Estas rutas están protegidas para admin, pero también permitirán acceso basado en permisos

@@ -1,19 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">
                 {{ __('Bitácora del Sistema') }}
             </h2>
             <div class="flex gap-2">
-                <a href="{{ route('audit-logs.statistics') }}"
-                   class="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
-                    <i class="fas fa-chart-bar"></i> Estadísticas
-                </a>
-                <form action="{{ route('audit-logs.export') }}" method="GET" class="inline" onsubmit="showLoadingSpinner()">
+                <form action="{{ route('audit-logs.export') }}" method="GET" class="inline" id="exportForm">
                     @foreach(request()->except('_token') as $key => $value)
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                     @endforeach
-                    <button type="submit" class="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-white transition bg-green-500 rounded hover:bg-green-600">
                         <i class="fas fa-file-csv"></i> Exportar CSV
                     </button>
                 </form>
@@ -22,31 +18,31 @@
     </x-slot>
 
     <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="fixed inset-0 bg-gray-900 bg-opacity-50 items-center justify-center z-50" style="display: none;">
-        <div class="bg-white p-6 rounded-lg text-center shadow-2xl">
-            <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+    <div id="loadingSpinner" class="fixed inset-0 z-50 items-center justify-center bg-gray-900 bg-opacity-50" style="display: none;">
+        <div class="p-6 text-center bg-white rounded-lg shadow-2xl">
+            <i class="mb-4 text-4xl text-blue-500 fas fa-spinner fa-spin"></i>
             <p class="text-lg font-semibold">Generando exportación...</p>
-            <p class="text-sm text-gray-500 mt-2">Por favor espere</p>
+            <p class="mt-2 text-sm text-gray-500">Por favor espere</p>
         </div>
     </div>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
 
             <!-- Contador de Resultados -->
             @if($logs->total() > 0)
-                <div class="mb-4 text-sm text-gray-600 bg-white px-6 py-3 rounded-lg shadow-sm">
+                <div class="px-6 py-3 mb-4 text-sm text-gray-600 bg-white rounded-lg shadow-sm">
                     📊 Mostrando <strong>{{ $logs->firstItem() }}</strong> - <strong>{{ $logs->lastItem() }}</strong> de <strong>{{ $logs->total() }}</strong> registros
                 </div>
             @endif
 
             <!-- Filtros -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+            <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('audit-logs.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <form method="GET" action="{{ route('audit-logs.index') }}" id="filterForm" class="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <!-- Filtro por Usuario -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Usuario</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Usuario</label>
                             <select name="user_id" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
                                 <option value="">Todos los usuarios</option>
                                 @foreach($users as $user)
@@ -59,7 +55,7 @@
 
                         <!-- Filtro por Acción -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Acción</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Acción</label>
                             <select name="action" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
                                 <option value="">Todas las acciones</option>
                                 @foreach($actions as $action)
@@ -72,7 +68,7 @@
 
                         <!-- Filtro por IP -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Dirección IP</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Dirección IP</label>
                             <input type="text" name="ip_address" value="{{ request('ip_address') }}"
                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
                                    placeholder="Ej: 192.168.1.1">
@@ -80,32 +76,32 @@
 
                         <!-- Filtro por Fecha Inicio -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Desde</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Desde</label>
                             <input type="date" name="start_date" value="{{ request('start_date') }}"
                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
                         </div>
 
                         <!-- Filtro por Fecha Fin -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Hasta</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Hasta</label>
                             <input type="date" name="end_date" value="{{ request('end_date') }}"
                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
                         </div>
 
                         <!-- Filtro por Endpoint -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Endpoint</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Endpoint</label>
                             <input type="text" name="endpoint" value="{{ request('endpoint') }}"
                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
                                    placeholder="Ej: docentes">
                         </div>
 
-                        <div class="md:col-span-3 flex gap-2">
-                            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition">
+                        <div class="flex gap-2 md:col-span-3">
+                            <button type="submit" class="px-6 py-2 text-white transition bg-blue-500 rounded hover:bg-blue-600">
                                 🔍 Filtrar
                             </button>
                             <a href="{{ route('audit-logs.index') }}"
-                               class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition">
+                               class="px-6 py-2 text-white transition bg-gray-500 rounded hover:bg-gray-600">
                                 🔄 Limpiar Filtros
                             </a>
                         </div>
@@ -114,28 +110,28 @@
             </div>
 
             <!-- Tabla de Logs -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <!-- Vista Desktop: Tabla -->
-                    <div class="hidden md:block overflow-x-auto">
+                    <div class="hidden overflow-x-auto md:block">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha/Hora</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">ID</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Fecha/Hora</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Usuario</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Acción</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Endpoint</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Método</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">IP</th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($logs as $log)
-                                    <tr class="hover:bg-gray-50 transition">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $log->id }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <tr class="transition hover:bg-gray-50">
+                                        <td class="px-6 py-4 text-sm whitespace-nowrap">{{ $log->id }}</td>
+                                        <td class="px-6 py-4 text-sm whitespace-nowrap">
                                             <div class="font-medium text-gray-700" title="{{ $log->created_at->format('d/m/Y H:i:s') }}">
                                                 {{ $log->created_at->diffForHumans() }}
                                             </div>
@@ -143,11 +139,11 @@
                                                 {{ $log->created_at->format('H:i:s') }}
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td class="px-6 py-4 text-sm whitespace-nowrap">
                                             <div class="font-medium text-gray-900">
                                                 {{ $log->user?->name ?? 'Usuario Eliminado' }}
                                             </div>
-                                            <div class="text-gray-500 text-xs">
+                                            <div class="text-xs text-gray-500">
                                                 {{ $log->user?->email ?? 'N/A' }}
                                             </div>
                                         </td>
@@ -184,11 +180,11 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500">
-                                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">
+                                            <code class="px-2 py-1 text-xs bg-gray-100 rounded">
                                                 {{ $log->endpoint ?? 'N/A' }}
                                             </code>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td class="px-6 py-4 text-sm whitespace-nowrap">
                                             <span class="px-2 py-1 text-xs font-semibold rounded
                                                 @if($log->http_method == 'POST') bg-green-100 text-green-800
                                                 @elseif($log->http_method == 'GET') bg-blue-100 text-blue-800
@@ -200,12 +196,12 @@
                                                 {{ $log->http_method ?? 'N/A' }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                             {{ $log->ip_address }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td class="px-6 py-4 text-sm whitespace-nowrap">
                                             <a href="{{ route('audit-logs.show', $log) }}"
-                                               class="inline-flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">
+                                               class="inline-flex items-center gap-1 px-3 py-1 text-white transition bg-blue-500 rounded hover:bg-blue-600">
                                                 <i class="fas fa-eye"></i> Ver
                                             </a>
                                         </td>
@@ -222,9 +218,9 @@
                     </div>
 
                     <!-- Vista Móvil: Tarjetas -->
-                    <div class="md:hidden space-y-4">
+                    <div class="space-y-4 md:hidden">
                         @forelse($logs as $log)
-                            <article class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" role="article" aria-label="Registro de auditoría {{ $log->id }}">
+                            <article class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm" role="article" aria-label="Registro de auditoría {{ $log->id }}">
                                 <!-- Cabecera -->
                                 <div class="flex items-start justify-between mb-3">
                                     <div class="flex-1">
@@ -262,7 +258,7 @@
                                             </span>
                                         </div>
                                         <p class="text-sm text-gray-500" aria-label="Fecha del registro">
-                                            <i class="fas fa-clock text-xs"></i>
+                                            <i class="text-xs fas fa-clock"></i>
                                             <time datetime="{{ $log->created_at->toISOString() }}">
                                                 {{ $log->created_at->diffForHumans() }}
                                             </time>
@@ -271,8 +267,8 @@
                                 </div>
 
                                 <!-- Información del Usuario -->
-                                <div class="mb-3 pb-3 border-b border-gray-100">
-                                    <p class="text-xs text-gray-500 mb-1">Usuario</p>
+                                <div class="pb-3 mb-3 border-b border-gray-100">
+                                    <p class="mb-1 text-xs text-gray-500">Usuario</p>
                                     <p class="font-medium text-gray-900">{{ $log->user?->name ?? 'Usuario Eliminado' }}</p>
                                     <p class="text-xs text-gray-500">{{ $log->user?->email ?? 'N/A' }}</p>
                                 </div>
@@ -280,7 +276,7 @@
                                 <!-- Detalles Técnicos -->
                                 <div class="grid grid-cols-2 gap-3 mb-3 text-sm">
                                     <div>
-                                        <p class="text-xs text-gray-500 mb-1">Método</p>
+                                        <p class="mb-1 text-xs text-gray-500">Método</p>
                                         <span class="px-2 py-1 text-xs font-semibold rounded inline-block
                                             @if($log->http_method == 'POST') bg-green-100 text-green-800
                                             @elseif($log->http_method == 'GET') bg-blue-100 text-blue-800
@@ -293,30 +289,30 @@
                                         </span>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-gray-500 mb-1">IP</p>
-                                        <p class="text-xs text-gray-700 font-mono">{{ $log->ip_address }}</p>
+                                        <p class="mb-1 text-xs text-gray-500">IP</p>
+                                        <p class="font-mono text-xs text-gray-700">{{ $log->ip_address }}</p>
                                     </div>
                                 </div>
 
                                 <!-- Endpoint -->
                                 <div class="mb-3">
-                                    <p class="text-xs text-gray-500 mb-1">Endpoint</p>
-                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded block truncate">
+                                    <p class="mb-1 text-xs text-gray-500">Endpoint</p>
+                                    <code class="block px-2 py-1 text-xs truncate bg-gray-100 rounded">
                                         {{ $log->endpoint ?? 'N/A' }}
                                     </code>
                                 </div>
 
                                 <!-- Botón de Acción -->
                                 <a href="{{ route('audit-logs.show', $log) }}"
-                                   class="inline-flex items-center justify-center gap-2 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition touch-manipulation active:scale-95"
+                                   class="inline-flex items-center justify-center w-full gap-2 px-4 py-2 text-white transition bg-blue-500 rounded-lg hover:bg-blue-600 touch-manipulation active:scale-95"
                                    aria-label="Ver detalles del registro {{ $log->id }}">
                                     <i class="fas fa-eye"></i>
                                     <span>Ver Detalles</span>
                                 </a>
                             </article>
                         @empty
-                            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                <i class="fas fa-inbox text-4xl text-gray-400 mb-3"></i>
+                            <div class="p-8 text-center border-2 border-gray-300 border-dashed rounded-lg bg-gray-50">
+                                <i class="mb-3 text-4xl text-gray-400 fas fa-inbox"></i>
                                 <p class="text-gray-500">No se encontraron registros</p>
                             </div>
                         @endforelse
@@ -333,38 +329,12 @@
 
     <!-- JavaScript -->
     <script>
-        // Mostrar spinner de carga durante exportación
-        function showLoadingSpinner() {
-            document.getElementById('loadingSpinner').style.display = 'flex';
-
-            // Ocultar después de 5 segundos (por si hay error)
-            setTimeout(() => {
-                document.getElementById('loadingSpinner').style.display = 'none';
-            }, 5000);
-        }
-
-        // Auto-refresh opcional (comentado por defecto)
-        // let autoRefreshEnabled = false;
-        // let refreshInterval = null;
-
-        // function toggleAutoRefresh() {
-        //     autoRefreshEnabled = !autoRefreshEnabled;
-        //     if (autoRefreshEnabled) {
-        //         refreshInterval = setInterval(() => {
-        //             location.reload();
-        //         }, 30000); // 30 segundos
-        //         console.log('Auto-refresh activado');
-        //     } else {
-        //         clearInterval(refreshInterval);
-        //         console.log('Auto-refresh desactivado');
-        //     }
-        // }
-
-        // Confirmar antes de aplicar filtros si hay muchos resultados
         document.addEventListener('DOMContentLoaded', function() {
-            const filterForm = document.querySelector('form[action*="audit-logs"]');
+            // Manejar SOLO el formulario de filtros (NO el de exportación)
+            const filterForm = document.getElementById('filterForm');
+
             if (filterForm) {
-                // Agregar indicador de carga en botones
+                // Agregar indicador de carga solo en botones de filtros
                 const submitButtons = filterForm.querySelectorAll('button[type="submit"]');
                 submitButtons.forEach(button => {
                     button.addEventListener('click', function(e) {
@@ -380,6 +350,10 @@
                     });
                 });
             }
+
+            // El formulario de exportación (#exportForm) se envía normalmente
+            // SIN interceptación JavaScript, permitiendo la descarga automática del archivo CSV
+            console.log('✅ Formulario de exportación configurado para descarga directa');
         });
     </script>
 </x-app-layout>

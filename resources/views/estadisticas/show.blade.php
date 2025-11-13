@@ -153,7 +153,7 @@
                                                 <tr>
                                                     <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Fecha</th>
                                                     <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Día</th>
-                                                    <th class="px-4 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Estudiantes</th>
+                                                    <th class="px-4 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Estado</th>
                                                     <th class="px-4 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Método Registro</th>
                                                     <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Hora Registro</th>
                                                     <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Estado</th>
@@ -169,8 +169,8 @@
                                                             {{ \Carbon\Carbon::parse($registro['fecha'])->locale('es')->dayName }}
                                                         </td>
                                                         <td class="px-4 py-3 text-sm text-center whitespace-nowrap">
-                                                            <span class="inline-flex px-3 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
-                                                                {{ $registro['cantidad_estudiantes'] }} estudiante(s)
+                                                            <span class="inline-flex px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                                                                ✓ Registrado
                                                             </span>
                                                         </td>
                                                         <td class="px-4 py-3 text-sm text-center whitespace-nowrap">
